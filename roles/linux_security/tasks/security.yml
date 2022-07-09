@@ -1,0 +1,39 @@
+---
+# tasks for general security settings
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html#ansible-collections-ansible-builtin-user-module
+- name: Disable root user
+  ansible.builtin.user:
+    name: root
+    password_lock: yes
+
+# https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.html
+- name: Manage root CA
+  block:
+    - name: Add root CA certificate file
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ linux_security_ca_certificates_path }}/{{ item.name }}.crt"
+        owner: root
+        group: root
+        mode: '0644'
+      register: add_root_ca_result
+      when: item.state == 'present'
+      loop: "{{ linux_security_root_ca_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Remove root CA certificate file
+      ansible.builtin.file:
+        path: "{{ linux_security_ca_certificates_path }}/{{ item.name }}.crt"
+        state: absent
+      register: remove_root_ca_result
+      when: item.state == 'absent'
+      loop: "{{ linux_security_root_ca_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Update root CA
+      ansible.builtin.command: "{{ linux_security_ca_update_command }}"
+      when: add_root_ca_result.changed or remove_root_ca_result.changed
+  when: linux_security_root_ca_list is defined

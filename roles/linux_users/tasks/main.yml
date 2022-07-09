@@ -1,0 +1,6 @@
+---
+# tasks file for linux_users
+
+- import_tasks: users.yml
+  tags:
+  - linux_users

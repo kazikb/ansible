@@ -1,0 +1,76 @@
+---
+# tasks file for configuring email alerts
+
+- name: Tasks on Debian/Ubuntu OS
+  block:
+    # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/debconf_module.html#
+    # http://www.postfix.org/ADDRESS_REWRITING_README.html
+    - name: Configure debconf for Postfix installation
+      ansible.builtin.debconf:
+        name: postfix
+        question: postfix/main_mailer_type
+        value: No configuration
+        vtype: select
+
+    - name: Install Postfix on Debian/Ubuntu OS
+      ansible.builtin.apt:
+        name:
+          - mailutils
+          - postfix
+        state: present
+        update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Tasks on RedHat OS
+  block:
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2001537
+    - name: Set fact postfix packages list on RedHat 8
+      ansible.builtin.set_fact:
+        linux_common_mta_dnf_package_list: ['postfix', 'mailx']
+      when: ansible_distribution_version == '8'
+
+    - name: Set fact postfix packages list on RedHat 9 and later
+      ansible.builtin.set_fact:
+        linux_common_mta_dnf_package_list: ['postfix', 's-nail']
+      when: ansible_distribution_version >= '9'
+
+    - name: Install Postfix on RedHat OS
+      ansible.builtin.dnf:
+        name: "{{ linux_common_mta_dnf_package_list }}"
+        state: present
+        update_cache: yes
+  when: ansible_os_family == 'RedHat'
+
+- name: Update Postfix config files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - { src: "postfix-main.cf-{{ ansible_os_family | lower }}.j2", dest: /etc/postfix/main.cf }
+    - { src: "postfix-header_check-{{ ansible_os_family | lower }}.j2", dest: /etc/postfix/header_check }
+    - { src: postfix-sender_canonical_maps.j2, dest: /etc/postfix/sender_canonical_maps }
+  notify:
+    - restart postfix
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html#examples
+- name: Set root notification e-mail
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertbefore: "{{ item.insertbefore | default(omit) }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - regexp: '^"\s*Ansible'
+      line: '" Ansible managed'
+      insertbefore: BOF
+    - regexp: '^root:'
+      line: "root: {{ linux_common_mta_root_notification_email }}"
+  when: linux_common_mta_root_notification_email is defined
+  notify:
+    - update aliases

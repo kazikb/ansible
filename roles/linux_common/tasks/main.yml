@@ -1,0 +1,20 @@
+---
+# tasks file for linux_common
+
+- name: linux_common role
+  block:
+    - name: Include OS specific variables
+      ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+
+    - name: Import common tasks
+      ansible.builtin.import_tasks: common.yml
+
+    - name: Import groups tasks
+      ansible.builtin.import_tasks: groups.yml
+      when: linux_common_group_list is defined
+
+    - name: Import mta tasks
+      ansible.builtin.import_tasks: send-only-mta.yml
+      when: linux_common_mta_enabled | bool
+  tags:
+    - linux_common

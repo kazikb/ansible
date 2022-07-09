@@ -1,0 +1,6 @@
+---
+# vars file for linux_common RedHat OS
+
+linux_common_locale_config_file: /etc/locale.conf
+linux_common_vimrc_global_config_file: /etc/vimrc
+linux_common_cron_service_name: crond

@@ -1,0 +1,120 @@
+# {{ ansible_managed }}
+[commands]
+#  What kind of upgrade to perform:
+# default                            = all available upgrades
+# security                           = only the security upgrades
+upgrade_type = {{ linux_security_dnf_automatic_upgrade_type | default('default') }}
+random_sleep = {{ linux_security_dnf_automatic_random_sleep | default('0') }}
+
+# Maximum time in seconds to wait until the system is on-line and able to
+# connect to remote repositories.
+network_online_timeout = {{ linux_security_dnf_automatic_network_online_timeout | default('60') }}
+
+# To just receive updates use dnf-automatic-notifyonly.timer
+
+# Whether updates should be downloaded when they are available, by
+# dnf-automatic.timer. notifyonly.timer, download.timer and
+# install.timer override this setting.
+download_updates = {{ linux_security_dnf_automatic_download_updates | default('yes') }}
+
+# Whether updates should be applied when they are available, by
+# dnf-automatic.timer. notifyonly.timer, download.timer and
+# install.timer override this setting.
+apply_updates = {{ linux_security_dnf_automatic_apply_updates | default('no') }}
+
+
+[emitters]
+# Name to use for this system in messages that are emitted.  Default is the
+# hostname.
+{% if linux_security_dnf_automatic_system_name is defined %}
+system_name = {{ linux_security_dnf_automatic_system_name }}
+{% else %}
+# system_name = my-host
+{% endif %}
+
+# How to send messages.  Valid options are stdio, email and motd.  If
+# emit_via includes stdio, messages will be sent to stdout; this is useful
+# to have cron send the messages.  If emit_via includes email, this
+# program will send email itself according to the configured options.
+# If emit_via includes motd, /etc/motd file will have the messages. if
+# emit_via includes command_email, then messages will be send via a shell
+# command compatible with sendmail.
+# Default is email,stdio.
+# If emit_via is None or left blank, no messages will be sent.
+emit_via = {{ linux_security_dnf_automatic_emit_via | default('stdio') }}
+
+
+[email]
+# The address to send email messages from.
+{% if linux_security_dnf_automatic_email_from is defined %}
+email_from = {{ linux_security_dnf_automatic_email_from }}
+{% elif linux_common_mta_sender_domain is defined %}
+email_from = {{ ansible_hostname }}@{{ linux_common_mta_sender_domain }}
+{% else %}
+email_from = root@{{ ansible_fqdn }}
+{% endif %}
+
+# List of addresses to send messages to.
+{% if linux_security_dnf_automatic_email_to_list is defined %}
+email_to = {{ linux_security_dnf_automatic_email_to_list | join(' ') }}
+{% elif linux_common_mta_root_notification_email is defined %}
+email_to = {{ linux_common_mta_root_notification_email }}
+{% else %}
+email_to = root
+{% endif %}
+
+# Name of the host to connect to to send email messages.
+{% if linux_security_dnf_automatic_email_host is defined %}
+email_host = {{ linux_security_dnf_automatic_email_host }}
+{% elif linux_common_mta_smtp_relayhost is defined %}
+email_host = {{ linux_common_mta_smtp_relayhost }}
+{% else %}
+email_host = localhost
+{% endif %}
+
+
+[command]
+# The shell command to execute. This is a Python format string, as used in
+# str.format(). The format function will pass a shell-quoted argument called
+# `body`.
+# command_format = "cat"
+
+# The contents of stdin to pass to the command. It is a format string with the
+# same arguments as `command_format`.
+# stdin_format = "{body}"
+
+
+[command_email]
+# The shell command to use to send email. This is a Python format string,
+# as used in str.format(). The format function will pass shell-quoted arguments
+# called body, subject, email_from, email_to.
+# command_format = "mail -Ssendwait -s {subject} -r {email_from} {email_to}"
+
+# The contents of stdin to pass to the command. It is a format string with the
+# same arguments as `command_format`.
+# stdin_format = "{body}"
+
+# The address to send email messages from.
+{% if linux_security_dnf_automatic_email_from is defined %}
+email_from = {{ linux_security_dnf_automatic_email_from }}
+{% elif linux_common_mta_sender_domain is defined %}
+email_from = {{ ansible_hostname }}@{{ linux_common_mta_sender_domain }}
+{% else %}
+email_from = root@{{ ansible_fqdn }}
+{% endif %}
+
+# List of addresses to send messages to.
+{% if linux_security_dnf_automatic_email_to_list is defined %}
+email_to = {{ linux_security_dnf_automatic_email_to_list | join(' ') }}
+{% elif linux_common_mta_root_notification_email is defined %}
+email_to = {{ linux_common_mta_root_notification_email }}
+{% else %}
+email_to = root
+{% endif %}
+
+
+[base]
+# This section overrides dnf.conf
+
+# Use this to filter DNF core messages
+debuglevel = 1

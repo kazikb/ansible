@@ -1,0 +1,30 @@
+---
+# tasks file for managing users accounts
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html
+# https://docs.ansible.com/ansible/latest/collections/ansible/posix/authorized_key_module.html#
+- name: Add users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    comment: "{{ item.comment | default(omit) }}"
+    state: "{{ item.state }}"
+    remove: "{{ item.remove | default('yes') }}"
+    shell: "{{ item.shell | default(omit) }}"
+    groups: "{{ item.groups | default(omit) }}"
+  loop: "{{ linux_users_list }}"
+  loop_control:
+    label: "user: {{ item.username }}"
+
+# https://docs.ansible.com/ansible/latest/user_guide/playbooks_conditionals.html#the-when-statement
+# https://docs.ansible.com/ansible/latest/user_guide/playbooks_loops.html#complex-loops
+- name: Set authorized key for users
+  ansible.posix.authorized_key:
+    user: "{{ item.0.username }}"
+    state: "{{ item.1.state }}"
+    key: "{{ item.1.pubkey }}"
+    manage_dir: yes
+  when: item.0.state == 'present' and item.1.pubkey
+  loop: "{{ linux_users_list | subelements('keys') }}"
+  loop_control:
+    label: "user: {{ item.0.username }}"

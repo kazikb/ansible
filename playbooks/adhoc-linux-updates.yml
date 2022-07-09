@@ -1,0 +1,67 @@
+---
+# Playbook used to install updates on Linux hosts.
+# Host will be restarted if needed.
+#
+# ansible-playbook adhoc-linux-updates.yml -K --limit host --list-hosts
+# ansible-playbook adhoc-linux-updates.yml -K --limit host
+#
+- name: Install updates and reboot hosts
+  hosts: all
+  become: true
+  gather_facts: true
+
+  # https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.html
+  tasks:
+    - name: Update Debian/Ubuntu OS
+      block:
+        - name: Update cache and upgrade software on Debian/Ubuntu OS
+          ansible.builtin.apt:
+            update_cache: yes
+            upgrade: safe
+
+        # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/stat_module.html#ansible-collections-ansible-builtin-stat-module
+        - name: Check if reboot required on Debian/Ubuntu OS
+          ansible.builtin.stat:
+            path: /var/run/reboot-required
+            get_checksum: no
+          register: reboot_required_file
+
+        # https://docs.ansible.com/ansible/latest/modules/reboot_module.html
+        - name: Reboot host on Debian/Ubuntu OS
+          ansible.builtin.reboot:
+            connect_timeout: 5
+            msg: "Reboot initiated by Ansible to update host"
+            post_reboot_delay: 10
+            reboot_timeout: 3600
+          when: reboot_required_file.stat.exists
+
+        - name: APT cleanuap
+          ansible.builtin.apt:
+            autoremove: yes
+            purge: yes
+      when: ansible_os_family == 'Debian'
+
+    - name: Update RedHat OS
+      block:
+        - name: Update software RedHat OS
+          ansible.builtin.dnf:
+            name: "*"
+            state: latest
+            update_cache: yes
+
+        # https://access.redhat.com/solutions/27943
+        - name: Check if reboot required on RedHat OS
+          ansible.builtin.command:
+            cmd: dnf needs-restarting -r
+          register: reboot_required
+          failed_when: reboot_required.rc not in [0, 1]
+          changed_when: reboot_required.rc != 0
+
+        - name: Reboot host on RedHat OS
+          ansible.builtin.reboot:
+            connect_timeout: 5
+            msg: "Reboot initiated by Ansible to update host"
+            post_reboot_delay: 10
+            reboot_timeout: 3600
+          when: reboot_required.rc != 0
+      when: ansible_os_family == 'RedHat'

@@ -1,0 +1,18 @@
+---
+# defaults file for linux_users
+
+# https://docs.ansible.com/ansible/latest/reference_appendices/faq.html#how-do-i-generate-encrypted-passwords-for-the-user-module
+# Password generation
+# mkpasswd --method=sha-512
+
+linux_users_list:
+  - username: # user account name
+    password: # password generated with mkpasswd
+    comment: # description (aka GECOS) of user account
+    state: # absent | present
+    remove: # remove user home directory when state absent
+    keys: # list of ssh public key
+      - pubkey: # ssh public key
+        state: # absent | present
+    shell: # shell
+    groups: # default groups (Debian 10: cdrom,floppy,audio,dip,video,plugdev,netdev,bluetooth) (Ubuntu 20.04: adm,cdrom,sudo,dip,plugdev,lxd)

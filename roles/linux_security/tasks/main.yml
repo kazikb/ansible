@@ -1,0 +1,25 @@
+---
+# tasks file for linux_security
+
+- name: linux_security role
+  block:
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+
+    - name: Import security tasks
+      ansible.builtin.import_tasks: security.yml
+
+    - name: Import openssh tasks
+      ansible.builtin.import_tasks: openssh.yml
+
+    - name: Import sudo tasks
+      ansible.builtin.import_tasks: sudo.yml
+
+    - name: Import firewall tasks
+      ansible.builtin.import_tasks: "firewall.yml"
+
+    - name: Import autoupdate tasks
+      ansible.builtin.import_tasks: "autoupdate.yml"
+      when: linux_security_enable_autoupdates | bool
+  tags:
+    - linux_security

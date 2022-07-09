@@ -1,0 +1,6 @@
+---
+# vars file for linux_common Debian OS
+
+linux_common_locale_config_file: /etc/default/locale
+linux_common_vimrc_global_config_file: /etc/vim/vimrc.local
+linux_common_cron_service_name: cron

@@ -1,0 +1,12 @@
+---
+# tasks for managing sudoers
+
+- name: Sudo allow user/group to use all commands without password
+  ansible.builtin.lineinfile:
+    dest: /etc/sudoers
+    state: "{{ item.state }}"
+    regexp: "^{{ item.name }}"
+    line: '{{ item.name }} ALL=(ALL) NOPASSWD: ALL'
+    validate: /usr/sbin/visudo -cf %s
+  when: linux_security_sudo_nopasswd_list is defined
+  loop: "{{ linux_security_sudo_nopasswd_list }}"

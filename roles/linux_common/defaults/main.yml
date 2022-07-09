@@ -1,0 +1,57 @@
+---
+# defaults file for linux_common
+
+linux_common_software_list: # Common software to install
+  - vim
+  - htop
+  - curl
+  - tree
+
+# linux_common_domain_name: # set host domain name in /etc/hosts
+linux_common_timezone: Europe/Warsaw # set system timezone
+
+# [Debian OS] Settings for systemd-timesyncd config file /etc/systemd/timesyncd.conf
+# linux_common_debian_ntp_server_list: # list of ntp server to add in timesyncd.conf section: NTP=
+# linux_common_debian_ntp_server_fallback_ntp_list: # timesyncd.conf section: FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
+# linux_common_debian_ntp_root_distance_max_sec: # timesyncd.conf section: RootDistanceMaxSec=5
+# linux_common_debian_ntp_poll_interval_min_sec: # timesyncd.conf section: PollIntervalMinSec=32
+# linux_common_debian_ntp_poll_interval_max_sec: # timesyncd.conf section: PollIntervalMaxSec=2048
+
+# [RedHat OS] Settings for chronyd config file /etc/chrony.conf
+# linux_common_redhat_ntp_server_list: # list of ntp servers|pools to add in chrony.conf allong with options "server ntp.mydomain.local iburst prefer"|"pool 2.centos.pool.ntp.org iburst"
+# linux_common_redhat_ntp_makestep: # Allow the system clock to be stepped in the first three updates if its offset is larger than 1 second.
+# linux_common_redhat_ntp_hwtimestamp_list: # Enable hardware timestamping on all interfaces that support it.
+# linux_common_redhat_ntp_minsources: # Increase the minimum number of selectable sources required to adjust the system clock.
+# linux_common_redhat_ntp_allow_list: # Allow NTP client access from local network.
+# linux_common_redhat_ntp_local: # Serve time even if not synchronized to a time source.
+# linux_common_redhat_ntp_log_dir: # Specify directory for log files.
+# linux_common_redhat_ntp_log: # Select which information is logged.
+
+# [Debian OS] List of locales to generate
+linux_common_debian_locale_to_generate:
+  - name: en_US # locale name base on /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+  - name: en_US.UTF-8 # locale name base on /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+  - name: pl_PL # locale name base on /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+  - name: pl_PL.UTF-8 # locale name base on /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+
+# [RedHat OS] List of additionals language pack to install
+linux_common_redhat_locale_to_install:
+  - name: glibc-langpack-pl.x86_64 # dnf package name (dnf list | grep glibc-langpack-)
+    state: present # absent | present
+
+linux_common_locale: en_US.UTF-8
+
+# Groups manage
+# linux_common_group_list:
+#   - name: # group name
+#     state: # absent | present
+
+# MTA
+linux_common_mta_enabled: no # enable postfix mta for sending notification
+linux_common_mta_root_notification_email: # notification email address for root
+linux_common_mta_smtp_relayhost: # smtp relayhost address
+linux_common_mta_sender_domain: # sender domain name

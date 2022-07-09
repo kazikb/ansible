@@ -1,0 +1,34 @@
+---
+# tasks for configuring openssh
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/template_module.html#ansible-collections-ansible-builtin-template-module
+# https://infosec.mozilla.org/guidelines/openssh
+- name: Update SSH configuration file
+  ansible.builtin.template:
+    src: openssh-sshd_config.j2
+    dest: "{{ linux_security_sshd_config_file_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -T -f %s'
+  notify: restart sshd
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html
+- name: Deactivate short moduli
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: |
+      awk '$5 >= 3071' /etc/ssh/moduli > /etc/ssh/moduli.tmp &&
+      mv /etc/ssh/moduli.tmp /etc/ssh/moduli &&
+      touch /etc/ssh/moduli_ansible_managed
+    creates: /etc/ssh/moduli_ansible_managed
+  notify: restart sshd
+
+- name: Remove ssh_host_dsa_key
+  ansible.builtin.file:
+    path: "/etc/ssh/{{ item }}"
+    state: absent
+  notify: restart sshd
+  loop:
+    - ssh_host_dsa_key
+    - ssh_host_dsa_key.pub

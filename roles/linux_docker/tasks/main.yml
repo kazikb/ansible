@@ -1,0 +1,7 @@
+---
+# tasks file for linux_docker
+
+- name: Import docker tasks
+  ansible.builtin.import_tasks: docker.yml
+  tags:
+    - linux_docker

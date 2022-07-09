@@ -1,0 +1,136 @@
+---
+# tasks file for installing and configuring common software
+
+- name: Tasks on Debian/Ubuntu OS
+  block:
+    # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
+    - name: Install base software on Debian/Ubuntu OS
+      ansible.builtin.apt:
+        name: "{{ linux_common_software_list }}"
+        state: present
+        update_cache: yes
+
+    # https://docs.ansible.com/ansible/latest/collections/community/general/locale_gen_module.html
+    # https://wiki.debian.org/Locale
+    - name: Ensure a locale exists on Debian/Ubuntu OS
+      community.general.locale_gen:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+      loop: "{{ linux_common_debian_locale_to_generate }}"
+
+    - name: Start service systemd-timesyncd on Debian/Ubuntu OS
+      ansible.builtin.systemd:
+        state: started
+        name: systemd-timesyncd.service
+
+    - name: Set NTP client on Debian/Ubuntu OS
+      ansible.builtin.template:
+        src: ntp-timesyncd.conf.j2
+        dest: /etc/systemd/timesyncd.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart systemd-timesyncd
+
+    # https://docs.ansible.com/ansible/latest/collections/community/general/alternatives_module.html
+    - name: Set default editor on Debian/Ubuntu OS
+      community.general.alternatives:
+        name: editor
+        path: /usr/bin/vim.basic
+  when: ansible_os_family == 'Debian'
+
+- name: Tasks on RedHat OS
+  block:
+    # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/dnf_module.html#ansible-collections-ansible-builtin-dnf-module
+    - name: Enable EPEL Repository on RedHat OS
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+        update_cache: yes
+
+    - name: Install base software on RedHat OS
+      ansible.builtin.dnf:
+        name: "{{ linux_common_software_list }}"
+        state: present
+        update_cache: yes
+
+    - name: Install aditional language packs on RedHat OS
+      ansible.builtin.dnf:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+      loop: "{{ linux_common_redhat_locale_to_install }}"
+
+    - name: Start service chronyd on RedHat OS
+      ansible.builtin.systemd:
+        state: started
+        name: chronyd.service
+
+    - name: Set Chrony NTP client on RedHat OS
+      ansible.builtin.template:
+        src: chrony-chrony.conf.j2
+        dest: /etc/chrony.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart chronyd
+  when: ansible_os_family == 'RedHat'
+
+# https://docs.ansible.com/ansible/latest/collections/community/general/timezone_module.html
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ linux_common_timezone }}"
+  notify: restart cron
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html
+# https://www.gnu.org/savannah-checkouts/gnu/gettext/manual/html_node/The-LANGUAGE-variable.html
+- name: Set default locale
+  ansible.builtin.lineinfile:
+    path: "{{ linux_common_locale_config_file }}"
+    state: present
+    mode: '0644'
+    create: yes
+    regexp: 'LANG='
+    line: 'LANG="{{ linux_common_locale }}"'
+
+- name: Append fqdn to localhost entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s*{{ ansible_hostname }}'
+    line: 127.0.1.1 {{ ansible_hostname }}.{{ linux_common_domain_name }} {{ ansible_hostname }}
+    owner: root
+    group: root
+    mode: '0644'
+  when: linux_common_domain_name is defined
+
+- name: Update facts
+  ansible.builtin.setup:
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html
+- name: Update Vim config file
+  ansible.builtin.lineinfile:
+    path: "{{ linux_common_vimrc_global_config_file }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertbefore: "{{ item.insertbefore | default(omit) }}"
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+  loop:
+    - regexp: '^"\s*Ansible'
+      line: '" Ansible managed'
+      insertbefore: BOF
+    - regexp: '^"set number'
+      line: 'set number'
+    - regexp: '^"set hlsearch'
+      line: 'set hlsearch'
+    - regexp: '^"set tabstop'
+      line: 'set tabstop=2'
+    - regexp: '^"set softtabstop'
+      line: 'set softtabstop=2'
+    - regexp: '^"set autoindent'
+      line: 'set autoindent'
+    - regexp: '^"syntax on'
+      line: 'syntax on'
+    - regexp: '^"set expandtab'
+      line: 'set expandtab'

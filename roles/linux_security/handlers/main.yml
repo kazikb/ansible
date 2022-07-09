@@ -1,0 +1,22 @@
+---
+# handlers file for linux_security
+
+# https://docs.ansible.com/ansible/latest/modules/service_module.html
+- name: restart sshd
+  ansible.builtin.service:
+    name: "{{ linux_security_sshd_service_name }}"
+    state: restarted
+
+- name: reload ufw
+  community.general.ufw:
+    state: reloaded
+
+- name: restart firewalld
+  ansible.builtin.systemd:
+    state: restarted
+    name: firewalld.service
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html#ansible-collections-ansible-builtin-systemd-module
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes

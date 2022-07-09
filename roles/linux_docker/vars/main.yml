@@ -1,0 +1,18 @@
+---
+# vars file for linux_docker
+
+linux_docker_dnf_podman_remove_list:
+  - podman
+  - runc
+
+linux_docker_apt_dependency_package_list:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+linux_docker_package_list:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io

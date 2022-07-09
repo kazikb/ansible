@@ -1,0 +1,10 @@
+---
+# vars file for linux_security Debian OS
+
+# OpenSSH
+linux_security_sshd_config_file_path: /etc/ssh/sshd_config
+linux_security_sshd_service_name: ssh
+
+# Root CA
+linux_security_ca_certificates_path: /usr/local/share/ca-certificates
+linux_security_ca_update_command: update-ca-certificates --fresh

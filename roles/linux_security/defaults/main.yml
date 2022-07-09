@@ -1,0 +1,117 @@
+---
+# defaults file for linux-security
+
+linux_security_enable_autoupdates: yes # configure automatic updates depending on the operating system family
+
+# OpenSSH
+linux_security_sshd_allow_users: [] # list of allowed users to connect using ssh
+linux_security_sshd_deny_users: [] # list of denyed users to connect using ssh
+
+# Root CA. Add root CA certificate to trusted store.
+# linux_security_root_ca_list:
+#   - name: # CA name
+#     state: # absent | present
+#     content: |
+#       Certificate .crt file content
+
+# Sudo
+# list of users/groups allowed to run all commands without password
+# linux_security_sudo_nopasswd_list:
+#   - name: # user name
+#     state: # absent | present
+
+# region Debian based OS
+
+# Uncomplicated Firewall
+linux_security_ufw_default_list:
+  - { direction: incoming, policy: deny }
+  - { direction: outgoing, policy: allow }
+linux_security_ufw_logging: 'on' # toggles logging. Logged packets use the LOG_KERN syslog facility [on, off, low, medium, high, full]
+
+linux_security_ufw_rules_list:
+  - rule: allow # add firewall rule [allow, deny, limit, reject]
+    delete: 'no'  # delete rule [yes/no]
+    direction: in  # select direction for a rule [in, incoming, out, outgoing, routed]
+#    from_ip: 1.2.3.4 # source IP address
+#    from_port: 12345  # source port
+#    interface: eth0  # specify interface for the rule
+#    log: 'yes'  # log new connections matched to this rule [yes/no]
+    proto: tcp  # TCP/IP protocol [any, tcp, udp, ipv6, esp, ah, gre, igmp]
+#    to_ip: 1.2.3.4  # destination IP address
+    to_port: 22  # destination port
+    comment: 'Allow SSH'
+
+# Unattended Upgrades
+# controls which packages are upgraded on Debian OS
+linux_security_apt_origins_pattern_debian_list:
+  - '"origin=Debian,codename=${distro_codename},label=Debian";'
+  - '"origin=Debian,codename=${distro_codename},label=Debian-Security";'
+# controls which packages are upgraded on Ubuntu OS
+linux_security_apt_allowed_origins_ubuntu_list:
+  - '"${distro_id}:${distro_codename}";'
+  - '"${distro_id}:${distro_codename}-security";'
+# controls which packages are upgraded on Ubuntu OS with Extended Security Maintenance
+linux_security_apt_allowed_origins_esm_ubuntu_list:
+  - '"${distro_id}ESMApps:${distro_codename}-apps-security";'
+  - '"${distro_id}ESM:${distro_codename}-infra-security";'
+# linux_security_apt_package_black_list: # list of regular expressions, matching packages to exclude from upgrading
+# linux_security_apt_notification_email: # notification email address (default no notification) require maile setup
+# linux_security_apt_mail_only_on_error_debian: # true/false [string] send emails only on errors (default false)
+# linux_security_apt_mail_only_on_error_ubuntu: # "always", "only-on-error", "on-change" when send emails (default on-change)
+# linux_security_apt_remove_unused_kernel_packages: # true/false [string] remove unused automatically installed kernel-related packages (default true)
+# linux_security_apt_remove_new_unused_dependencies: # true/false [string] automatic removal of newly unused dependencies after the upgrade (default true)
+# linux_security_apt_remove_unused_dependencies: # true/false [string] automatic removal of unused packages after the upgrade (default false)
+linux_security_apt_automatic_reboot: "true" # true/false [string] automatically reboot (default true)
+linux_security_apt_automatic_reboot_with_users: "true" # true/false [string] automatically reboot even if there are users currently logged in (default true)
+linux_security_apt_automatic_reboot_time: "04:00" # reboot time after installing updates
+# linux_security_apt_dl_limit: # apt bandwidth limit kb/sec (default 70kb/sec)
+# linux_security_apt_syslog_enable: # true/false [string] enable logging to syslog (default false)
+# linux_security_apt_syslog_facility: # syslog facility (default daemon)
+# linux_security_apt_allow_downgrade_ubuntu: # true/false [string] allow package downgrade if Pin-Priority exceeds 1000 (default false)
+
+# timer setings
+linux_security_apt_download_time: "5,20:00" # systemd timer override default download time
+linux_security_apt_download_randomized_delay_sec: "2h" # systemd timer override default randomized deley
+linux_security_apt_upgrade_time: "2:00" # systemd timer override default upgrade time
+linux_security_apt_upgrade_randomized_delay_sec: "60m" # systemd timer override default upgrade deley
+
+# endregion Debian based OS
+
+# region RedHat based OS
+
+# Firewalld service
+# Ansible module documentation:
+# https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.html
+linux_security_firewalld_rules_list:
+  - state: enabled # for service and ports [disabled, enabled] for zones [present, absent]
+    # icmp_block: # icmp types to block "firewall-cmd --get-icmptypes"
+    # icmp_block_inversion: # [Enable/Disable] inversion of ICMP blocks for a zone in firewalld
+    # immediate: # [yes/no] should this configuration be applied immediately, if set as permanent (default no)
+    # interface: # interface to add/remove to/from a zone
+    # offline: # [yes/no] whether to run this module even when firewalld is offline.
+    permanent: yes # [yes/no] should this configuration be in the running firewalld configuration or persist across reboots
+    # port: # port or port range to add/remove to/from firewalld [PORT/PROTOCOL, PORT-PORT/PROTOCOL]
+    # rich_rule: # rich rule to add/remove to/from firewalld https://firewalld.org/documentation/man-pages/firewalld.richlanguage.html
+    service: ssh # service name to add/remove "firewall-cmd --get-services"
+    # source: # source ip/network
+    # target: # firewalld Zone target [default, ACCEPT, DROP, %%REJECT%%]
+    # timeout: # the amount of time in seconds the rule should be in effect for when non-permanent
+    zone: public # firewalld zone to add/remove to/from [block, dmz, drop, external, home, internal, public, trusted, work] (default public)
+
+# DNF autoupdate
+linux_security_dnf_automatic_upgrade_type: default # [default, security] what kind of upgrade to perform
+# linux_security_dnf_automatic_random_sleep: # random sleep
+# linux_security_dnf_automatic_network_online_timeout: # maximum time in seconds to wait until the system is on-line and able to connect to remote repositories
+linux_security_dnf_automatic_download_updates: 'yes' # yes/no [string] whether updates should be downloaded when they are available
+linux_security_dnf_automatic_apply_updates: 'yes' # yes/no [string] whether updates should be applied when they are available
+# linux_security_dnf_automatic_emit_via: # [stdio, email, motd] how to send messages.
+# linux_security_dnf_automatic_system_name: # name to use for this system in messages that are emitted
+# linux_security_dnf_automatic_email_from: # the address to send email messages from (default using {{ ansible_hostname }}@{{ linux_common_mta_sender_domain }} from role linux_common)
+# linux_security_dnf_automatic_email_to_list: # list of addresses to send messages to (default using linux_common_mta_root_notification_email from role linux_common if defined)
+# linux_security_dnf_automatic_email_host: # name of the host to connect to send email messages (default using linux_common_mta_smtp_relayhost from role linux_common)
+
+# timer setings
+linux_security_dnf_automatic_install_time: "2:00" # systemd timer override default autoupdate time
+linux_security_dnf_automatic_install_randomized_delay_sec: "60m" # systemd timer override default autoupdate deley
+
+# endregion RedHat based OS

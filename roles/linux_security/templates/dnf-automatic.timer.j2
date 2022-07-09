@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* {{ linux_security_dnf_automatic_install_time }}
+RandomizedDelaySec={{ linux_security_dnf_automatic_install_randomized_delay_sec }}

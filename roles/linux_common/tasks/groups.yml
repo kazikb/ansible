@@ -1,0 +1,9 @@
+---
+# tasks for managing groups
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/group_module.html#ansible-collections-ansible-builtin-group-module
+- name: Add groups
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  loop: "{{ linux_common_group_list }}"

@@ -1,0 +1,118 @@
+---
+# Playbook used for initial configuration of Linux hosts.
+#
+# List of components that this playbook configures:
+# - Install sudo package.
+# - On Ubuntu OS removes cloud-init packages.
+# - Setup ansible user along with authorized key.
+# - Setup password for root user.
+#
+# Passwords are hashed using mkpasswd
+# mkpasswd --method=sha-512
+#
+# https://docs.ansible.com/ansible/latest/user_guide/vault.html
+# Variables containing passwords/keys are placed in an encrypted file
+# ansible-vault create --vault-id lab@prompt secrets/init-linux-host-secrets.yml
+#
+# Run on Debian OS
+# ansible-playbook init-linux-host.yml -u user -k --become-method su -K --ask-vault-password -i 1.1.1.1,
+#
+# Run on Ubuntu/RedHat OS
+# ansible-playbook init-linux-host.yml -u user -k -K --ask-vault-password -i 1.1.1.1,
+#
+- name: Initial configuration of Linux hosts
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # ansible_user: # name of user to be used by ansible
+    init_software_to_install_list:
+      - sudo
+    # init_root_password: # sha512 root password
+    # init_ansible_user_password: # sha512 ansible user password
+    # init_ansible_user_ssh_key: # ansible user ssh public key
+
+  vars_files:
+    - ./secrets/init-linux-host-secrets.yml
+
+  tasks:
+    - name: Include secrets
+      include_vars: ./secrets/init-linux-host-secrets.yml
+
+    - name: Tasks on Debian/Ubuntu OS
+      block:
+        - name: Set admin group name Debian/Ubuntu OS
+          ansible.builtin.set_fact:
+            init_admin_group_name: sudo
+
+        - name: Install init software Debian/Ubuntu OS
+          ansible.builtin.apt:
+            name: "{{ init_software_to_install_list }}"
+            state: present
+            update_cache: yes
+      when: ansible_os_family == 'Debian'
+
+    - name: Tasks on RedHat OS
+      block:
+        - name: Set admin group name RedHat OS
+          ansible.builtin.set_fact:
+            init_admin_group_name: wheel
+
+        - name: Install init software RedHat OS
+          ansible.builtin.dnf:
+            name: "{{ init_software_to_install_list }}"
+            state: present
+            update_cache: yes
+      when: ansible_os_family == 'RedHat'
+
+    - name: Remove cloud-init on Ubuntu OS
+      block:
+        - name: Purge cloud-init packages
+          ansible.builtin.apt:
+            name: cloud-init
+            state: absent
+            purge: yes
+          register: cloud_init_restart
+
+        - name: Remove cloud-init directories
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          register: cloud_init_restart
+          loop:
+            - /etc/cloud/
+            - /var/lib/cloud/
+
+        - name: Reboot host to finished cloud-init removal
+          ansible.builtin.reboot:
+            connect_timeout: 5
+            msg: "Reboot initiated by Ansible to update host"
+            post_reboot_delay: 10
+            reboot_timeout: 3600
+          when: cloud_init_restart is change
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Set Ansible user
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        password: "{{ init_ansible_user_password }}"
+        state: present
+        shell: /bin/bash
+        groups: "{{ init_admin_group_name }}"
+        append: yes
+
+    - name: Set authorized key for Ansible user
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ init_ansible_user_ssh_key }}"
+        manage_dir: yes
+
+    # On Ubuntu root account is disabled by default so there is no need to set up password.
+    - name: Set root password
+      ansible.builtin.user:
+        name: root
+        password: "{{ init_root_password }}"
+        state: present
+      when: ansible_distribution != 'Ubuntu'

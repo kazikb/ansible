@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* {{ linux_security_apt_upgrade_time }}
+RandomizedDelaySec={{ linux_security_apt_upgrade_randomized_delay_sec }}

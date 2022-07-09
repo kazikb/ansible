@@ -1,0 +1,78 @@
+#  {{ ansible_managed }}
+{% if linux_common_redhat_ntp_server_list is defined %}
+{% for item in linux_common_redhat_ntp_server_list %}
+{{ item }}
+{% endfor %}
+{% else %}
+# These servers were defined in the installation:
+pool 2.centos.pool.ntp.org iburst
+{% endif %}
+# Use public servers from the pool.ntp.org project.
+# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+
+# Record the rate at which the system clock gains/losses time.
+driftfile /var/lib/chrony/drift
+
+# Allow the system clock to be stepped in the first three updates
+# if its offset is larger than 1 second.
+{% if linux_common_redhat_ntp_makestep is defined %}
+makestep {{ linux_common_redhat_ntp_makestep }}
+{% else %}
+makestep 1.0 3
+{% endif %}
+
+# Enable kernel synchronization of the real-time clock (RTC).
+rtcsync
+
+# Enable hardware timestamping on all interfaces that support it.
+{% if linux_common_redhat_ntp_hwtimestamp_list is defined %}
+{% for item in linux_common_redhat_ntp_hwtimestamp_list %}
+hwtimestamp {{ item }}
+{% endfor %}
+{% else %}
+#hwtimestamp *
+{% endif %}
+
+# Increase the minimum number of selectable sources required to adjust
+# the system clock.
+{% if linux_common_redhat_ntp_minsources is defined %}
+minsources {{ linux_common_redhat_ntp_minsources }}
+{% else %}
+#minsources 2
+{% endif %}
+
+# Allow NTP client access from local network.
+{% if linux_common_redhat_ntp_allow_list is defined %}
+{% for item in linux_common_redhat_ntp_allow_list %}
+allow {{ item }}
+{% endfor %}
+{% else %}
+#allow 192.168.0.0/16
+{% endif %}
+
+# Serve time even if not synchronized to a time source.
+{% if linux_common_redhat_ntp_local is defined %}
+local {{ linux_common_redhat_ntp_local }}
+{% else %}
+#local stratum 10
+{% endif %}
+
+# Specify file containing keys for NTP authentication.
+keyfile /etc/chrony.keys
+
+# Get TAI-UTC offset and leap seconds from the system tz database.
+leapsectz right/UTC
+
+# Specify directory for log files.
+{% if linux_common_redhat_ntp_log_dir is defined %}
+log {{ linux_common_redhat_ntp_log_dir }}
+{% else %}
+logdir /var/log/chrony
+{% endif %}
+
+# Select which information is logged.
+{% if linux_common_redhat_ntp_log is defined %}
+log {{ linux_common_redhat_ntp_log }}
+{% else %}
+#log measurements statistics tracking
+{% endif %}

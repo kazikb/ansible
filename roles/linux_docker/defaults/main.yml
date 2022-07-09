@@ -1,0 +1,8 @@
+---
+# defaults file for linux_docker
+
+linux_docker_default_bip: "172.18.0.1/16" # gateway ip address used by docker default network.
+
+# Docker compose https://github.com/docker/compose/releases
+linux_docker_compose_version: 2.3.3
+linux_docker_compose_checksum: sha256:d31e90dda58e21a6463cb918868421b4b58c32504b01b1612d154fe6a9167a91

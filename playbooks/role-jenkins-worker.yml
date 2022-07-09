@@ -1,0 +1,77 @@
+---
+# Playbook used to configure host as a jenkins worker node.
+#
+# List of components that this playbook configures:
+# - Install OpenJDK runtime and kubectl.
+# - Create docker and kubectl config files in Jenkins user home directory.
+#
+# ansible-playbook role-jenkins-worker.yml -u user -K
+#
+- name: Config jenkins worker role
+  hosts: jenkins
+  become: true
+  gather_facts: true
+
+  # vars:
+  #   role_jenkins_worker_java_version: # Jave Runtime Package version (Debian 10: 11 -> openjdk-11-jre)
+  #   role_jenkins_worker_kubectl_version: # kubectl version https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+  #   role_jenkins_worker_kubectl_checksum: # kubectl file checksum (sha256:hash_value)
+  #   role_jenkins_worker_user_config_list:
+  #     - name: user # user name
+  #       config:
+  #         - path: .docker # docker config directory
+  #           file: config.json # docker config file
+  #           content: # docker config content
+  #         - path: .kube # kubectl config directory
+  #           file: config # kubectl config file
+  #           content: # docker kubectl content
+
+  roles:
+    - linux_common
+    - linux_security
+    - linux_docker
+    - linux_users
+
+  tasks:
+    - name: Install Java  software on Debian/Ubuntu OS
+      ansible.builtin.apt:
+        name: "openjdk-{{ role_jenkins_worker_java_version }}-jre"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'Debian'
+
+    - name: Install Java  software on RedHat OS
+      ansible.builtin.dnf:
+        name: "java-{{ role_jenkins_worker_java_version }}-openjdk"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'RedHat'
+
+    - name: Download kubectl
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/v{{ role_jenkins_worker_kubectl_version }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        checksum: "{{ role_jenkins_worker_kubectl_checksum }}"
+        mode: '0755'
+
+    - name: Create config directories in user profile
+      ansible.builtin.file:
+        path: "/home/{{ item.0.name }}/{{ item.1.path }}"
+        state: directory
+        owner: "{{ item.0.name }}"
+        group: "{{ item.0.name }}"
+        mode: '0700'
+      loop: "{{ role_jenkins_worker_user_config_list | subelements('config') }}"
+      loop_control:
+        label: "user: {{ item.0.name }} path: {{ item.1.path }}"
+
+    - name: Copy config files
+      ansible.builtin.copy:
+        content: "{{ item.1.content }}"
+        dest: "/home/{{ item.0.name }}/{{ item.1.path }}/{{ item.1.file }}"
+        owner: "{{ item.0.name }}"
+        group: "{{ item.0.name }}"
+        mode: '0600'
+      loop: "{{ role_jenkins_worker_user_config_list | subelements('config') }}"
+      loop_control:
+        label: "user: {{ item.0.name }} file: {{ item.1.path }}/{{ item.1.file }}"
