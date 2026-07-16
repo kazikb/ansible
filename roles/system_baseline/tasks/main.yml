@@ -40,8 +40,5 @@
     - name: Import automatic updates tasks
       ansible.builtin.import_tasks: automatic_updates.yml
       when: system_baseline_automatic_updates_enabled | bool
-
-    # - name: Import common tasks
-    #   ansible.builtin.import_tasks: common.yml
   tags:
     - system_baseline
