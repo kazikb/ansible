@@ -1,28 +1,21 @@
 ---
-# handlers file for linux_common
+# handlers file for system_baseline
 
-# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html#ansible-collections-ansible-builtin-systemd-module
-- name: restart systemd-timesyncd
-  ansible.builtin.systemd:
+- name: Restart NTP service
+  ansible.builtin.systemd_service:
     state: restarted
-    name: systemd-timesyncd.service
+    name: "{{ system_baseline_detected_ntp_service }}.service"
 
-- name: restart chronyd
-  ansible.builtin.systemd:
-    state: restarted
-    name: chronyd.service
-
-# https://docs.ansible.com/ansible/latest/modules/service_module.html
-- name: restart cron
-  ansible.builtin.service:
-    name: "{{ linux_common_cron_service_name }}"
+- name: Restart cron
+  ansible.builtin.systemd_service:
+    name: "{{ system_baseline_cron_service_name }}"
     state: restarted
 
-- name: restart postfix
-  ansible.builtin.service:
+- name: Restart postfix
+  ansible.builtin.systemd_service:
     name: postfix
     state: restarted
 
-# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html#ansible-collections-ansible-builtin-command-module
-- name: update aliases
-  ansible.builtin.command: newaliases
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: yes

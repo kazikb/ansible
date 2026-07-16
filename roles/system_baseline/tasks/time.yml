@@ -1,0 +1,76 @@
+---
+- name: Determine NTP implementation
+  ansible.builtin.set_fact:
+    system_baseline_detected_ntp_service: >-
+      {{
+        'chrony'
+        if ansible_facts.services.get('chrony.service', {}).get('status') == 'enabled'
+        else 'chronyd'
+        if ansible_facts.services.get('chronyd.service', {}).get('status') == 'enabled'
+        else 'systemd-timesyncd'
+        if ansible_facts.services.get('systemd-timesyncd.service', {}).get('status') == 'enabled'
+        else 'unknown'
+      }}
+
+- name: Check if supported NTP implementation
+  ansible.builtin.fail:
+    msg: Not supported NTP implementation
+  when: system_baseline_detected_ntp_service == "unknown"
+
+- name: Start NTP service
+  ansible.builtin.systemd_service:
+    name: "{{ system_baseline_detected_ntp_service }}.service"
+    state: started
+
+- name: Configure Chrony
+  when:
+    - system_baseline_detected_ntp_service in ['chrony', 'chronyd']
+    - system_baseline_ntp_server_list | length > 0
+  block:
+    - name: Add managed Chrony servers
+      ansible.builtin.blockinfile:
+        path: "{{ system_baseline_chrony_config_file }}"
+        marker: "# {mark} ANSIBLE MANAGED NTP SERVERS"
+        block: |
+          {% for ntp_server in system_baseline_ntp_server_list %}
+          server {{ ntp_server }} iburst
+          {% endfor %}
+      notify: Restart NTP service
+
+    - name: Disable unmanaged Chrony servers and pools
+      ansible.builtin.replace:
+        path: "{{ system_baseline_chrony_config_file }}"
+        before: '# BEGIN ANSIBLE MANAGED NTP SERVERS'
+        regexp: '^(\s*(?:server|pool)\s+.*)$'
+        replace: '# Disabled by Ansible: \1'
+      notify: Restart NTP service
+
+- name: Configure systemd-timesyncd
+  when:
+    - system_baseline_detected_ntp_service == 'systemd-timesyncd'
+    - system_baseline_ntp_server_list | length > 0
+  block:
+    - name: Ensure Time section exists
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/timesyncd.conf
+        regexp: '^\s*\[Time\]\s*$'
+        line: '[Time]'
+        insertbefore: BOF
+        create: true
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart NTP service
+
+    - name: Set systemd-timesyncd servers
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/timesyncd.conf
+        regexp: '^\s*#?\s*NTP\s*=.*$'
+        line: "NTP={{ system_baseline_ntp_server_list | join(' ') }}"
+        insertafter: '^\s*\[Time\]\s*$'
+      notify: Restart NTP service
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ system_baseline_timezone }}"
+  notify: Restart cron

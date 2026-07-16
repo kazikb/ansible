@@ -1,0 +1,36 @@
+# {{ ansible_managed }}
+
+compatibility_level=3.6
+
+# Host identity
+myhostname = {{ ansible_facts['fqdn'] }}
+myorigin = {{ system_baseline_mta_sender_domain }}
+
+# Outbound relay
+relayhost = [{{ system_baseline_mta_smtp_relayhost }}]:{{ system_baseline_mta_smtp_relay_port }}
+
+# Null-client configuration
+inet_interfaces = loopback-only
+mynetworks = 127.0.0.0/8, [::1]/128
+mydestination =
+
+# Never perform local mailbox delivery
+local_recipient_maps =
+local_transport = error:5.1.1 Local delivery is disabled
+
+# Local aliases are not used by this null client.
+alias_maps =
+alias_database =
+
+# Outbound TLS
+smtp_tls_security_level = {{ system_baseline_mta_smtp_tls_security_level }}
+
+# Rewrite every sender to a host-specific address
+sender_canonical_maps = regexp:{ { /^[^@]+@[^@]+$$/ {{ ansible_facts['hostname'] | lower }}@{{ system_baseline_mta_sender_domain }} } }
+
+# Redirect system-recipient notifications
+recipient_canonical_maps = inline:{
+    root@{{ system_baseline_mta_sender_domain }}={{ system_baseline_mta_notification_email }},
+    postmaster@{{ system_baseline_mta_sender_domain }}={{ system_baseline_mta_notification_email }}
+    {{ ansible_facts['hostname'] | lower }}@{{ system_baseline_mta_sender_domain }}={{ system_baseline_mta_notification_email }}
+    }

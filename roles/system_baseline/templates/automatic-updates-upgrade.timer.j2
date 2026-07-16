@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* {{ system_baseline_automatic_updates_upgrade_time }}
+RandomizedDelaySec={{ system_baseline_automatic_updates_upgrade_randomized_delay_sec }}

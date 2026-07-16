@@ -1,0 +1,26 @@
+---
+# vars file for system_baseline
+
+# Common packages to install that have the same name on both OS family
+system_baseline_package_list:
+  - sudo
+  - ca-certificates
+  - htop
+  - curl
+  - wget
+  - iotop
+  - gnupg
+  - rsync
+  - tmux
+  - screen
+  - dnsutils
+  - tcpdump
+  - traceroute
+  - mtr
+  - strace
+  - tree
+  - lsof
+  - jq
+  - yq
+  - vim
+  - bash-completion

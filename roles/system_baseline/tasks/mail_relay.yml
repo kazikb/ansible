@@ -1,0 +1,44 @@
+---
+- name: Tasks on Debian/Ubuntu OS
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    # http://www.postfix.org/ADDRESS_REWRITING_README.html
+    - name: Configure debconf for Postfix installation
+      ansible.builtin.debconf:
+        name: postfix
+        question: postfix/main_mailer_type
+        value: No configuration
+        vtype: select
+
+    - name: Install Postfix on Debian/Ubuntu OS
+      ansible.builtin.apt:
+        name:
+          - mailutils
+          - postfix
+        state: present
+        update_cache: yes
+        cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
+
+- name: Install Postfix on RedHat OS
+  when: ansible_facts['os_family'] == 'RedHat'
+  ansible.builtin.dnf:
+    name:
+      - postfix
+      - s-nail
+    state: present
+    update_cache: yes
+
+- name: Update Postfix config
+  ansible.builtin.template:
+    src: postfix-main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart postfix
+
+- name: Enable Postfix service
+  ansible.builtin.systemd_service:
+    name: postfix
+    state: started
+    enabled: true

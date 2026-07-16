@@ -1,57 +1,83 @@
 ---
-# defaults file for linux_common
+# defaults file for system_baseline
 
-linux_common_software_list: # Common software to install
-  - vim
-  - htop
-  - curl
-  - tree
+# Set hostname to the value specify in ansible inventory file
+system_baseline_manage_hostname: yes
+system_baseline_hosts_entries: []
+# Remove Debian's 127.0.1.1 hostname entry because the real-IP managed
+# entries provide the host's local identity.
+system_baseline_remove_debian_hostname_entry: false
 
-# linux_common_domain_name: # set host domain name in /etc/hosts
-linux_common_timezone: Europe/Warsaw # set system timezone
+# set system timezone
+system_baseline_timezone: Europe/Warsaw
 
-# [Debian OS] Settings for systemd-timesyncd config file /etc/systemd/timesyncd.conf
-# linux_common_debian_ntp_server_list: # list of ntp server to add in timesyncd.conf section: NTP=
-# linux_common_debian_ntp_server_fallback_ntp_list: # timesyncd.conf section: FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
-# linux_common_debian_ntp_root_distance_max_sec: # timesyncd.conf section: RootDistanceMaxSec=5
-# linux_common_debian_ntp_poll_interval_min_sec: # timesyncd.conf section: PollIntervalMinSec=32
-# linux_common_debian_ntp_poll_interval_max_sec: # timesyncd.conf section: PollIntervalMaxSec=2048
-
-# [RedHat OS] Settings for chronyd config file /etc/chrony.conf
-# linux_common_redhat_ntp_server_list: # list of ntp servers|pools to add in chrony.conf allong with options "server ntp.mydomain.local iburst prefer"|"pool 2.centos.pool.ntp.org iburst"
-# linux_common_redhat_ntp_makestep: # Allow the system clock to be stepped in the first three updates if its offset is larger than 1 second.
-# linux_common_redhat_ntp_hwtimestamp_list: # Enable hardware timestamping on all interfaces that support it.
-# linux_common_redhat_ntp_minsources: # Increase the minimum number of selectable sources required to adjust the system clock.
-# linux_common_redhat_ntp_allow_list: # Allow NTP client access from local network.
-# linux_common_redhat_ntp_local: # Serve time even if not synchronized to a time source.
-# linux_common_redhat_ntp_log_dir: # Specify directory for log files.
-# linux_common_redhat_ntp_log: # Select which information is logged.
+# List of ntp servers to sync time
+system_baseline_ntp_server_list: []
 
 # [Debian OS] List of locales to generate
-linux_common_debian_locale_to_generate:
-  - name: en_US # locale name base on /usr/share/i18n/SUPPORTED
-    state: present # absent | present
+system_baseline_debian_locale_to_add:
   - name: en_US.UTF-8 # locale name base on /usr/share/i18n/SUPPORTED
-    state: present # absent | present
-  - name: pl_PL # locale name base on /usr/share/i18n/SUPPORTED
     state: present # absent | present
   - name: pl_PL.UTF-8 # locale name base on /usr/share/i18n/SUPPORTED
     state: present # absent | present
 
-# [RedHat OS] List of additionals language pack to install
-linux_common_redhat_locale_to_install:
-  - name: glibc-langpack-pl.x86_64 # dnf package name (dnf list | grep glibc-langpack-)
+# [RedHat OS] List of additionals locale to install
+system_baseline_redhat_locale_to_add:
+  - name: glibc-langpack-pl # dnf package name (dnf list | grep glibc-langpack-)
+    state: present # absent | present
+  - name: glibc-langpack-en # dnf package name (dnf list | grep glibc-langpack-)
     state: present # absent | present
 
-linux_common_locale: en_US.UTF-8
-
-# Groups manage
-# linux_common_group_list:
-#   - name: # group name
-#     state: # absent | present
+system_baseline_locale: en_US.UTF-8
 
 # MTA
-linux_common_mta_enabled: no # enable postfix mta for sending notification
-linux_common_mta_root_notification_email: # notification email address for root
-linux_common_mta_smtp_relayhost: # smtp relayhost address
-linux_common_mta_sender_domain: # sender domain name
+# enable postfix mta for sending notification [yes | no]
+system_baseline_mta_enabled: no
+# notification email address
+system_baseline_mta_notification_email:
+# smtp relayhost address
+system_baseline_mta_smtp_relayhost:
+# smtp relayhost port
+system_baseline_mta_smtp_relay_port:
+# sender domain name
+system_baseline_mta_sender_domain:
+# none    - no TLS
+# may     - opportunistic TLS
+# encrypt - require TLS
+system_baseline_mta_smtp_tls_security_level: may
+
+# Automatic Updates
+# enable automatic update [yes | no]
+system_baseline_automatic_updates_enabled: no
+# automatic updates type to install [all | security]
+system_baseline_automatic_updates_upgrade_type: security
+# automatically reboot [yes | no]
+system_baseline_automatic_updates_automatic_reboot: yes
+# systemd timer override default upgrade time
+system_baseline_automatic_updates_upgrade_time: "2:00"
+# systemd timer override default upgrade deley
+system_baseline_automatic_updates_upgrade_randomized_delay_sec: "15m"
+
+# [Debian OS] APT Automatic Updates
+# APT mail report content [always | on-change | only-on-error]
+system_baseline_automatic_updates_apt_mail_report: on-change
+# systemd timer override default APT download time
+system_baseline_automatic_updates_apt_download_time: "5,22:00"
+# systemd timer override default APT randomized deley
+system_baseline_automatic_updates_apt_download_randomized_delay_sec: "10m"
+# APT package-name regular expressions
+system_baseline_automatic_updates_apt_package_blacklist: []
+
+# [RedHat OS] DNF Automatic Updates
+# DNF Exclude packages specified by a name or a glob and separated by a comma
+system_baseline_automatic_updates_dnf_package_exclude: []
+
+# Root CA. Add root CA certificate to trusted store.
+# system_baseline_root_ca_list:
+#   - filename: # Certificate CA filename eg. homelab-root-ca.crt
+#     state: # absent | present
+#     content: |
+#       -----BEGIN CERTIFICATE-----
+#       ...
+#       -----END CERTIFICATE-----
+system_baseline_root_ca_list: []

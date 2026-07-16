@@ -1,0 +1,40 @@
+---
+- name: Setting list of packages to install
+  ansible.builtin.set_fact:
+    system_baseline_combined_package_list: >-
+      {{
+        (
+          system_baseline_package_list
+          + (system_baseline_distribution_package_list | default([]))
+        ) | unique
+      }}
+
+- name: Tasks on Debian/Ubuntu OS
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    - name: Install base software on Debian/Ubuntu OS
+      ansible.builtin.apt:
+        name: "{{ system_baseline_combined_package_list }}"
+        state: present
+        update_cache: yes
+        cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
+
+- name: Tasks on RedHat OS
+  when: ansible_facts['os_family'] == 'RedHat'
+  block:
+    - name: Enable epel repository is enabled on RedHat OS
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+        update_cache: yes
+
+    - name: Ensure the crb repository is enabled on RedHat OS
+      community.general.dnf_config_manager:
+        name: crb
+        state: enabled
+
+    - name: Install base software on RedHat OS
+      ansible.builtin.dnf:
+        name: "{{ system_baseline_combined_package_list }}"
+        state: present
+        update_cache: yes

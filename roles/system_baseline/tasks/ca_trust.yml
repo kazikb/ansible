@@ -1,0 +1,29 @@
+---
+- name: Add root CA certificate file
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ system_baseline_ca_certificates_path }}/{{ item.filename }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: item.state == 'present'
+  loop: "{{ system_baseline_root_ca_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: system_baseline_add_root_ca_result
+
+- name: Remove root CA certificate file
+  ansible.builtin.file:
+    path: "{{ system_baseline_ca_certificates_path }}/{{ item.filename }}"
+    state: absent
+  when: item.state == 'absent'
+  loop: "{{ system_baseline_root_ca_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: system_baseline_remove_root_ca_result
+
+# I want that root CA change be applied immediately
+- name: Update root CA
+  ansible.builtin.command: "{{ system_baseline_ca_update_command }}"
+  when: system_baseline_add_root_ca_result.changed
+    or system_baseline_remove_root_ca_result.changed

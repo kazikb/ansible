@@ -1,0 +1,37 @@
+---
+# https://wiki.debian.org/Locale
+- name: Tasks on Debian/Ubuntu OS
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    - name: Install locales package on Debian/Ubuntu
+      ansible.builtin.apt:
+        name: locales
+        state: present
+        update_cache: yes
+        cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
+
+    - name: Generate locales on Debian/Ubuntu
+      community.general.locale_gen:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+      loop: "{{ system_baseline_debian_locale_to_add }}"
+
+- name: Install locale language packs on Red Hat systems
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - "'glibc-all-langpacks' not in ansible_facts.packages"
+  ansible.builtin.dnf:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  loop: "{{ system_baseline_redhat_locale_to_add }}"
+
+- name: Set system-wide default locale
+  ansible.builtin.lineinfile:
+    path: "{{ system_baseline_locale_config_file }}"
+    regexp: '^LANG='
+    line: 'LANG="{{ system_baseline_locale }}"'
+    state: present
+    create: true
+    owner: root
+    group: root
+    mode: "0644"

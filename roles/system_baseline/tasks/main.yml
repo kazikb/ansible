@@ -1,20 +1,47 @@
 ---
-# tasks file for linux_common
+# tasks file for system_baseline
 
-- name: linux_common role
+- name: system_baseline role
   block:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
     - name: Include OS specific variables
-      ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+      ansible.builtin.include_vars:
+        file: "{{ ansible_facts['os_family'] | lower }}.yml"
 
-    - name: Import common tasks
-      ansible.builtin.import_tasks: common.yml
+    - name: Import identity tasks
+      ansible.builtin.import_tasks: identity.yml
 
-    - name: Import groups tasks
-      ansible.builtin.import_tasks: groups.yml
-      when: linux_common_group_list is defined
+    - name: Import packages tasks
+      ansible.builtin.import_tasks: packages.yml
 
-    - name: Import mta tasks
-      ansible.builtin.import_tasks: send-only-mta.yml
-      when: linux_common_mta_enabled | bool
+    - name: Import NTP/time tasks
+      ansible.builtin.import_tasks: time.yml
+
+    - name: Import locale tasks
+      ansible.builtin.import_tasks: locale.yml
+
+    - name: Import editor tasks
+      ansible.builtin.import_tasks: vim_editor.yml
+
+    - name: Import CA tasks
+      ansible.builtin.import_tasks: ca_trust.yml
+      when: system_baseline_root_ca_list | length > 0
+
+    - name: Import MTA tasks
+      ansible.builtin.import_tasks: mail_relay.yml
+      when: system_baseline_mta_enabled | bool
+
+    - name: Import automatic updates tasks
+      ansible.builtin.import_tasks: automatic_updates.yml
+      when: system_baseline_automatic_updates_enabled | bool
+
+    # - name: Import common tasks
+    #   ansible.builtin.import_tasks: common.yml
   tags:
-    - linux_common
+    - system_baseline

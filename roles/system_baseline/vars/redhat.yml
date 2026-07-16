@@ -1,6 +1,21 @@
 ---
-# vars file for linux_common RedHat OS
+# vars file for system_baseline RedHat OS
 
-linux_common_locale_config_file: /etc/locale.conf
-linux_common_vimrc_global_config_file: /etc/vimrc
-linux_common_cron_service_name: crond
+system_baseline_locale_config_file: /etc/locale.conf
+
+system_baseline_vimrc_global_config_file:  /etc/vimrc.local
+system_baseline_editor_path: /usr/bin/vim
+
+system_baseline_cron_service_name: crond
+system_baseline_chrony_config_file: /etc/chrony.conf
+
+# Distribution specific packages to install
+system_baseline_distribution_package_list:
+  - alternatives
+  - vim-enhanced
+  - iproute
+  - netcat
+
+# Root CA
+system_baseline_ca_certificates_path: /etc/pki/ca-trust/source/anchors
+system_baseline_ca_update_command: update-ca-trust extract
