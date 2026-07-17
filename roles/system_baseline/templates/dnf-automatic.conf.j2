@@ -51,7 +51,11 @@ reboot_command = "shutdown -r +5 'Rebooting after applying package updates'"
 # command compatible with sendmail.
 # Default is email,stdio.
 # If emit_via is None or left blank, no messages will be sent.
+{% if system_baseline_mta_enabled | bool %}
 emit_via = email,stdio
+{% else %}
+emit_via = stdio
+{% endif %}
 
 # Also invoke the configured emitters when DNF Automatic fails.
 send_error_messages = yes

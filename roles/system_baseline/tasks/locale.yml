@@ -1,22 +1,22 @@
 ---
 # https://wiki.debian.org/Locale
-- name: Tasks on Debian/Ubuntu OS
+- name: Manage locales on Debian and Ubuntu
   when: ansible_facts['os_family'] == 'Debian'
   block:
-    - name: Install locales package on Debian/Ubuntu
+    - name: Install locales package on Debian and Ubuntu
       ansible.builtin.apt:
         name: locales
         state: present
-        update_cache: yes
+        update_cache: true
         cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
 
-    - name: Generate locales on Debian/Ubuntu
+    - name: Manage locales on Debian and Ubuntu
       community.general.locale_gen:
         name: "{{ item.name }}"
         state: "{{ item.state }}"
       loop: "{{ system_baseline_debian_locale_to_add }}"
 
-- name: Install locale language packs on Red Hat systems
+- name: Manage locale language packs on Red Hat systems
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - "'glibc-all-langpacks' not in ansible_facts.packages"

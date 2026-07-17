@@ -9,7 +9,7 @@
   when: item.state == 'present'
   loop: "{{ system_baseline_root_ca_list }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.filename }}"
   register: system_baseline_add_root_ca_result
 
 - name: Remove root CA certificate file
@@ -19,11 +19,13 @@
   when: item.state == 'absent'
   loop: "{{ system_baseline_root_ca_list }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.filename }}"
   register: system_baseline_remove_root_ca_result
 
-# I want that root CA change be applied immediately
-- name: Update root CA
+# Apply trust-store changes immediately. A handler is intentionally not used
+# because flush_handlers would execute all pending handlers.
+- name: Update system CA trust store
   ansible.builtin.command: "{{ system_baseline_ca_update_command }}"
   when: system_baseline_add_root_ca_result.changed
     or system_baseline_remove_root_ca_result.changed
+  changed_when: true

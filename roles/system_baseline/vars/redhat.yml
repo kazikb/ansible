@@ -3,10 +3,10 @@
 
 system_baseline_locale_config_file: /etc/locale.conf
 
-system_baseline_vimrc_global_config_file:  /etc/vimrc.local
+system_baseline_vimrc_global_config_file: /etc/vimrc.local
 system_baseline_editor_path: /usr/bin/vim
 
-system_baseline_cron_service_name: crond
+system_baseline_cron_service_name: crond.service
 system_baseline_chrony_config_file: /etc/chrony.conf
 
 # Distribution specific packages to install

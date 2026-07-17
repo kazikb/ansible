@@ -1,18 +1,18 @@
 ---
-- name: Tasks on Debian/Ubuntu OS
+- name: Configure automatic updates on Debian and Ubuntu
   when: ansible_facts['os_family'] == 'Debian'
   block:
     # https://wiki.debian.org/UnattendedUpgrades
-    - name: Install apt unattended upgrades
+    - name: Install unattended-upgrades
       ansible.builtin.apt:
         name:
           - unattended-upgrades
           - apt-listchanges
         state: present
-        update_cache: yes
+        update_cache: true
         cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
 
-    - name: Create apt unattended upgrades timer override directory
+    - name: Create APT timer override directories
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -22,44 +22,53 @@
       loop:
         - /etc/systemd/system/apt-daily.timer.d
         - /etc/systemd/system/apt-daily-upgrade.timer.d
-      notify: Reload systemd
+      notify: Reload systemd manager configuration
 
-    - name: Update apt unattended upgrades config
+    - name: Configure APT automatic updates
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
         owner: root
         group: root
         mode: '0644'
-        backup: no
+        backup: false
       loop:
         - { src: apt-20auto-upgrades.j2, dest: /etc/apt/apt.conf.d/20auto-upgrades }
         - { src: apt-52unattended-upgrades-local.j2, dest: /etc/apt/apt.conf.d/52unattended-upgrades-local }
         - { src: apt-daily-download.timer.j2, dest: /etc/systemd/system/apt-daily.timer.d/override.conf }
         - { src: automatic-updates-upgrade.timer.j2, dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf }
-      notify: Reload systemd
+      notify: Reload systemd manager configuration
+
+    - name: Enable and start APT automatic-update timers
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - apt-daily.timer
+        - apt-daily-upgrade.timer
 
 
-- name: Tasks on RedHat OS
+- name: Configure automatic updates on Red Hat systems
   when: ansible_facts['os_family'] == 'RedHat'
   block:
     # https://dnf.readthedocs.io/en/stable/automatic.html
-    - name: Install dnf automatic
+    - name: Install DNF Automatic
       ansible.builtin.dnf:
         name: dnf-automatic
         state: present
-        update_cache: yes
+        update_cache: true
 
-    - name: Create dnf automatic timer override directory
+    - name: Create DNF Automatic timer override directory
       ansible.builtin.file:
         path: /etc/systemd/system/dnf-automatic.timer.d
         state: directory
         owner: root
         group: root
         mode: '0755'
-      notify: Reload systemd
+      notify: Reload systemd manager configuration
 
-    - name: Update dnf automatic config
+    - name: Configure DNF Automatic
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -69,10 +78,10 @@
       loop:
         - { src: automatic-updates-upgrade.timer.j2, dest: /etc/systemd/system/dnf-automatic.timer.d/override.conf }
         - { src: dnf-automatic.conf.j2, dest: /etc/dnf/automatic.conf }
-      notify: Reload systemd
+      notify: Reload systemd manager configuration
 
-    - name: Enable dnf-automatic.timer
+    - name: Enable and start dnf-automatic.timer
       ansible.builtin.systemd:
         name: dnf-automatic.timer
         state: started
-        enabled: yes
+        enabled: true

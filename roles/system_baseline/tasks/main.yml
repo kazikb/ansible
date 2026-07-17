@@ -1,26 +1,28 @@
 ---
 # tasks file for system_baseline
 
-- name: system_baseline role
+- name: Apply system baseline
+  tags:
+    - system_baseline
   block:
     - name: Gather service facts
       ansible.builtin.service_facts:
 
-    - name: Gather the package facts
+    - name: Gather package facts
       ansible.builtin.package_facts:
         manager: auto
 
-    - name: Include OS specific variables
+    - name: Include OS-specific variables
       ansible.builtin.include_vars:
         file: "{{ ansible_facts['os_family'] | lower }}.yml"
 
     - name: Import identity tasks
       ansible.builtin.import_tasks: identity.yml
 
-    - name: Import packages tasks
+    - name: Import package tasks
       ansible.builtin.import_tasks: packages.yml
 
-    - name: Import NTP/time tasks
+    - name: Import time synchronization tasks
       ansible.builtin.import_tasks: time.yml
 
     - name: Import locale tasks
@@ -29,16 +31,14 @@
     - name: Import editor tasks
       ansible.builtin.import_tasks: vim_editor.yml
 
-    - name: Import CA tasks
+    - name: Import CA trust tasks
       ansible.builtin.import_tasks: ca_trust.yml
       when: system_baseline_root_ca_list | length > 0
 
-    - name: Import MTA tasks
+    - name: Import mail relay tasks
       ansible.builtin.import_tasks: mail_relay.yml
       when: system_baseline_mta_enabled | bool
 
     - name: Import automatic updates tasks
       ansible.builtin.import_tasks: automatic_updates.yml
       when: system_baseline_automatic_updates_enabled | bool
-  tags:
-    - system_baseline

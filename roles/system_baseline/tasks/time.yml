@@ -4,23 +4,24 @@
     system_baseline_detected_ntp_service: >-
       {{
         'chrony'
-        if ansible_facts.services.get('chrony.service', {}).get('status') == 'enabled'
+        if 'chrony.service' in ansible_facts.services
         else 'chronyd'
-        if ansible_facts.services.get('chronyd.service', {}).get('status') == 'enabled'
+        if 'chronyd.service' in ansible_facts.services
         else 'systemd-timesyncd'
-        if ansible_facts.services.get('systemd-timesyncd.service', {}).get('status') == 'enabled'
+        if 'systemd-timesyncd.service' in ansible_facts.services
         else 'unknown'
       }}
 
-- name: Check if supported NTP implementation
+- name: Verify a supported NTP service is installed
   ansible.builtin.fail:
-    msg: Not supported NTP implementation
+    msg: No supported NTP service was detected
   when: system_baseline_detected_ntp_service == "unknown"
 
-- name: Start NTP service
+- name: Enable and start NTP service
   ansible.builtin.systemd_service:
     name: "{{ system_baseline_detected_ntp_service }}.service"
     state: started
+    enabled: true
 
 - name: Configure Chrony
   when:

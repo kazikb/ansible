@@ -1,5 +1,6 @@
 ---
-- hosts: localhost
+- name: Tests system_baseline
+  hosts: localhost
   remote_user: root
   roles:
-    - linux_common
+    - system_baseline
