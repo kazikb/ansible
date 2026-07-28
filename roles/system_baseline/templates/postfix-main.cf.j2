@@ -10,6 +10,7 @@ myorigin = {{ system_baseline_mta_sender_domain }}
 relayhost = [{{ system_baseline_mta_smtp_relayhost }}]:{{ system_baseline_mta_smtp_relay_port }}
 
 # Null-client configuration
+inet_protocols = all
 inet_interfaces = loopback-only
 mynetworks = 127.0.0.0/8, [::1]/128
 mydestination =
