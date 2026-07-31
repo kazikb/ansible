@@ -142,9 +142,9 @@ system_baseline_mta_smtp_tls_security_level: may
 - `system_baseline_automatic_updates_upgrade_type` - install `security` updates
   or `all` available updates. Default: `security`.
 - `system_baseline_automatic_updates_automatic_reboot` - automatically reboot
-  when required after updates. Default: `true`.
+  when required after updates. Default: `false`.
 - `system_baseline_automatic_updates_upgrade_time` - daily update time used by
-  the systemd timer. Default: `2:00`.
+  the systemd timer. Default: `02:00`.
 - `system_baseline_automatic_updates_upgrade_randomized_delay_sec` - randomized
   delay for the update timer. Default: `15m`.
 
@@ -152,7 +152,7 @@ system_baseline_mta_smtp_tls_security_level: may
 system_baseline_automatic_updates_enabled: true
 system_baseline_automatic_updates_upgrade_type: security
 system_baseline_automatic_updates_automatic_reboot: true
-system_baseline_automatic_updates_upgrade_time: "2:00"
+system_baseline_automatic_updates_upgrade_time: "02:00"
 system_baseline_automatic_updates_upgrade_randomized_delay_sec: "15m"
 ```
 
@@ -163,7 +163,7 @@ control APT behavior:
 - `system_baseline_automatic_updates_apt_mail_report` - mail report policy:
   `always`, `on-change` or `only-on-error`. Default: `on-change`.
 - `system_baseline_automatic_updates_apt_download_time` - daily package-list
-  download times. Default: `5,22:00`.
+  download times. Default: `05,22:00`.
 - `system_baseline_automatic_updates_apt_download_randomized_delay_sec` -
   randomized delay for package-list downloads. Default: `10m`.
 - `system_baseline_automatic_updates_apt_package_blacklist` - package-name
@@ -171,7 +171,7 @@ control APT behavior:
 
 ```yaml
 system_baseline_automatic_updates_apt_mail_report: on-change
-system_baseline_automatic_updates_apt_download_time: "5,22:00"
+system_baseline_automatic_updates_apt_download_time: "05,22:00"
 system_baseline_automatic_updates_apt_download_randomized_delay_sec: "10m"
 system_baseline_automatic_updates_apt_package_blacklist:
   - linux-image-.*

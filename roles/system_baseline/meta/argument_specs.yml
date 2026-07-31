@@ -1,0 +1,193 @@
+---
+argument_specs:
+  main:
+    short_description: Configure a common system baseline
+    description:
+      - Configures identity, time synchronization, locales, trusted root CAs,
+        a mail relay, and automatic updates.
+    options:
+      system_baseline_manage_hostname:
+        description: Sets the static hostname to inventory_hostname_short.
+        type: bool
+        default: true
+
+      system_baseline_hosts_entries:
+        description: A list of complete lines managed in a dedicated /etc/hosts block.
+        type: list
+        elements: str
+        default: []
+
+      system_baseline_remove_debian_hostname_entry:
+        description: Removes Debian's 127.0.1.1 hostname entry.
+        type: bool
+        default: false
+
+      system_baseline_timezone:
+        description: Sets the system timezone.
+        type: str
+        default: Europe/Warsaw
+
+      system_baseline_ntp_server_list:
+        description: A list of NTP servers used by the detected time service.
+        type: list
+        elements: str
+        default: []
+
+      system_baseline_debian_locale_to_add:
+        description: A list of locales to generate or remove on Debian and Ubuntu.
+        type: list
+        elements: dict
+        default:
+          - name: en_US.UTF-8
+            state: present
+          - name: pl_PL.UTF-8
+            state: present
+        options:
+          name:
+            description: Specifies a locale from /usr/share/i18n/SUPPORTED.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the locale is generated or removed.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      system_baseline_redhat_locale_to_add:
+        description: A list of locale language-pack packages to manage on Red Hat systems.
+        type: list
+        elements: dict
+        default:
+          - name: glibc-langpack-pl
+            state: present
+          - name: glibc-langpack-en
+            state: present
+        options:
+          name:
+            description: Specifies a DNF locale language-pack package name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the package is installed or removed.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      system_baseline_locale:
+        description: Sets the system-wide default locale.
+        type: str
+        default: en_US.UTF-8
+
+      system_baseline_mta_enabled:
+        description: Configures Postfix as a send-only null client when enabled.
+        type: bool
+        default: false
+
+      system_baseline_mta_notification_email:
+        description: Specifies the address that receives system notifications.
+        type: str
+
+      system_baseline_mta_smtp_relayhost:
+        description: Specifies the SMTP relay hostname or address.
+        type: str
+
+      system_baseline_mta_smtp_relay_port:
+        description: Specifies the SMTP relay port.
+        type: int
+
+      system_baseline_mta_sender_domain:
+        description: Specifies the domain used for rewritten sender addresses.
+        type: str
+
+      system_baseline_mta_smtp_tls_security_level:
+        description: Sets the Postfix SMTP TLS security level.
+        type: str
+        choices:
+          - none
+          - may
+          - encrypt
+        default: may
+
+      system_baseline_automatic_updates_enabled:
+        description: Configures automatic package updates when enabled.
+        type: bool
+        default: false
+
+      system_baseline_automatic_updates_upgrade_type:
+        description: Selects which package updates to install.
+        type: str
+        choices:
+          - all
+          - security
+        default: security
+
+      system_baseline_automatic_updates_automatic_reboot:
+        description: Reboots automatically when required after updates.
+        type: bool
+        default: true
+
+      system_baseline_automatic_updates_upgrade_time:
+        description: Sets the daily automatic-update systemd calendar time.
+        type: str
+        default: "2:00"
+
+      system_baseline_automatic_updates_upgrade_randomized_delay_sec:
+        description: Sets the randomized delay for the automatic-update timer.
+        type: str
+        default: 15m
+
+      system_baseline_automatic_updates_apt_mail_report:
+        description: Sets the unattended-upgrades mail report policy.
+        type: str
+        choices:
+          - always
+          - on-change
+          - only-on-error
+        default: on-change
+
+      system_baseline_automatic_updates_apt_download_time:
+        description: Sets the daily APT package-list download systemd calendar times.
+        type: str
+        default: "5,22:00"
+
+      system_baseline_automatic_updates_apt_download_randomized_delay_sec:
+        description: Sets the randomized delay for the APT download timer.
+        type: str
+        default: 10m
+
+      system_baseline_automatic_updates_apt_package_blacklist:
+        description: A list of package-name regular expressions excluded from unattended upgrades.
+        type: list
+        elements: str
+        default: []
+
+      system_baseline_automatic_updates_dnf_package_exclude:
+        description: A list of package names or globs excluded from DNF automatic updates.
+        type: list
+        elements: str
+        default: []
+
+      system_baseline_root_ca_list:
+        description: A list of root CA certificates to add to or remove from the trust store.
+        type: list
+        elements: dict
+        default: []
+        options:
+          filename:
+            description: Specifies the certificate filename in the system trust store.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the certificate is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          content:
+            description: Provides the PEM-encoded certificate content.
+            type: str

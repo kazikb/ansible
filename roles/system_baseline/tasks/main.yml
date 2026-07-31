@@ -5,6 +5,9 @@
   tags:
     - system_baseline
   block:
+    - name: Validate system baseline configuration
+      ansible.builtin.import_tasks: validate.yml
+
     - name: Gather service facts
       ansible.builtin.service_facts:
 
