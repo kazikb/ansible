@@ -9,6 +9,7 @@
       - system_baseline_mta_smtp_relay_port is not none
       - system_baseline_mta_sender_domain is string
       - system_baseline_mta_sender_domain | trim | length > 0
+    quiet: true
     fail_msg: >-
       Notification email, SMTP relay host, relay port, and sender domain must
       be configured when system_baseline_mta_enabled is true.
@@ -19,6 +20,7 @@
     that:
       - system_baseline_mta_smtp_relay_port | int >= 1
       - system_baseline_mta_smtp_relay_port | int <= 65535
+    quiet: true
     fail_msg: >-
       system_baseline_mta_smtp_relay_port must be between 1 and 65535.
   when:
@@ -31,6 +33,7 @@
       - item.filename | trim | length > 0
       - item.filename == (item.filename | basename)
       - item.filename is match('^[A-Za-z0-9._-]+\.crt$')
+    quiet: true
     fail_msg: >-
       Root CA filename "{{ item.filename }}" must be a plain filename ending
       in .crt and must not contain a directory path.
@@ -45,6 +48,7 @@
         item.content is defined
         and item.content is string
         and item.content | trim | length > 0
+    quiet: true
     fail_msg: >-
       Root CA "{{ item.filename }}" must provide non-empty certificate content
       when its state is present.
