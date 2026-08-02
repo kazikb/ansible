@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+{% for rule in item.sudo_rules | default([]) %}
+%{{ item.name }} {{ rule }}
+{% endfor %}

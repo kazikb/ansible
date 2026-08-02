@@ -1,30 +1,175 @@
 ---
-# tasks file for managing users accounts
+- name: Combine user definitions
+  ansible.builtin.set_fact:
+    access_management_users_list_combined: >-
+      {{
+        (access_management_users_list | default([]))
+        + (access_management_users_list_append | default([]))
+      }}
 
-# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/user_module.html
-# https://docs.ansible.com/ansible/latest/collections/ansible/posix/authorized_key_module.html#
-- name: Add users
-  ansible.builtin.user:
-    name: "{{ item.username }}"
-    password: "{{ item.password }}"
-    comment: "{{ item.comment | default(omit) }}"
-    state: "{{ item.state }}"
-    remove: "{{ item.remove | default('yes') }}"
-    shell: "{{ item.shell | default(omit) }}"
-    groups: "{{ item.groups | default(omit) }}"
-  loop: "{{ linux_users_list }}"
+- name: Validate user definitions
+  ansible.builtin.assert:
+    that:
+      - item.username | default('') | length > 0
+      - item.state | default('') in ['present', 'absent']
+      - >-
+          not (item.sudo_nopasswd | default(false) | bool)
+          or (item.sudo | default(false) | bool)
+      - >-
+        item.groups | default([])
+        | intersect(access_management_reserved_groups)
+        | length == 0
+    quiet: true
+    fail_msg: >-
+      Invalid access management user definition:
+      {{ item.username | default('undefined') }}.
+      Reserved groups {{ access_management_reserved_groups }}
+      must be managed through the sudo and ssh_access parameters.
+      The sudo_nopasswd parameter requires sudo: true.
+  vars:
+    access_management_reserved_groups:
+      - sudo
+      - wheel
+      - "{{ access_management_ssh_access_group }}"
+  loop: "{{ access_management_users_list_combined }}"
+  loop_control:
+    label: "user: {{ item.username | default('undefined') }}"
+
+- name: Validate unique usernames
+  ansible.builtin.assert:
+    that:
+      - >-
+        (
+          access_management_users_list_combined
+          | map(attribute='username')
+          | list
+          | length
+        )
+        ==
+        (
+          access_management_users_list_combined
+          | map(attribute='username')
+          | unique
+          | list
+          | length
+        )
+    quiet: true
+    fail_msg: >-
+      access_management_users_list and
+      access_management_users_list_append contain duplicate usernames.
+
+- name: Validate authorized key definitions
+  ansible.builtin.assert:
+    that:
+      - item.1.pubkey | default('') | length > 0
+      - item.1.state | default('') in ['present', 'absent']
+    fail_msg: >-
+      Invalid authorized key definition for user {{ item.0.username }}:
+      {{ item.1 }}
+    quiet: true
+  when: item.0.state == 'present'
+  loop: >-
+    {{
+      access_management_users_list_combined
+      | subelements('ssh_authorized_keys', skip_missing=True)
+    }}
+  loop_control:
+    label: "user: {{ item.0.username | default('undefined') }}"
+
+- name: Get list of existing groups
+  ansible.builtin.getent:
+    database: group
+
+- name: Initialize prepared users list
+  ansible.builtin.set_fact:
+    access_management_users_list_prepared: []
+
+- name: Prepare users group membership
+  ansible.builtin.set_fact:
+    access_management_users_list_prepared: >-
+      {{
+        access_management_users_list_prepared
+        +
+        [
+          item | combine({
+            'groups_to_apply': access_management_groups_to_apply
+          })
+        ]
+      }}
+  vars:
+    access_management_groups_to_apply: >-
+      {{
+        (
+          (
+            item.groups | default([])
+            | select('in', ansible_facts.getent_group.keys() | list)
+            | list
+          )
+          +
+          (
+            [access_management_sudo_group]
+            if (item.sudo | default(false) | bool)
+            else []
+          )
+          +
+          (
+            [access_management_ssh_access_group]
+            if (
+              access_management_manage_ssh_access
+              and (item.ssh_access | default(false) | bool)
+            )
+            else []
+          )
+        )
+        | unique
+        | sort
+        | list
+      }}
+  loop: "{{ access_management_users_list_combined }}"
   loop_control:
     label: "user: {{ item.username }}"
 
-# https://docs.ansible.com/ansible/latest/user_guide/playbooks_conditionals.html#the-when-statement
-# https://docs.ansible.com/ansible/latest/user_guide/playbooks_loops.html#complex-loops
-- name: Set authorized key for users
+- name: Manage local users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    state: "{{ item.state }}"
+    uid: "{{ item.uid | default(omit) }}"
+    password: "{{ item.password | default(omit) }}"
+    password_lock: "{{ item.password_lock | default(omit) }}"
+    shell: "{{ item.shell | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+    create_home: "{{ item.create_home | default(true) }}"
+    home: "{{ item.home | default(omit) }}"
+    move_home: "{{ item.move_home | default(false) }}"
+    append: false
+    group: "{{ item.group | default(omit) }}"
+    groups: "{{ item.groups_to_apply }}"
+    system: "{{ item.system | default(false) }}"
+    remove: "{{ item.remove | default(false) }}"
+  loop: "{{ access_management_users_list_prepared }}"
+  loop_control:
+    label: >-
+      "user: {{ item.username }}
+      (state={{ item.state }}
+      sudo={{ item.sudo | default(false) | bool }}
+      sudo_nopasswd={{ item.sudo_nopasswd | default(false) | bool }}
+      ssh_access={{ item.ssh_access | default(false) | bool }}
+      groups={{ item.groups_to_apply }})"
+
+- name: Manage local users authorized keys
   ansible.posix.authorized_key:
     user: "{{ item.0.username }}"
     state: "{{ item.1.state }}"
     key: "{{ item.1.pubkey }}"
-    manage_dir: yes
-  when: item.0.state == 'present' and item.1.pubkey
-  loop: "{{ linux_users_list | subelements('keys') }}"
+    manage_dir: true
+  when: item.0.state == 'present'
+  loop: >-
+    {{
+      access_management_users_list_prepared
+      | subelements('ssh_authorized_keys', skip_missing=True)
+    }}
   loop_control:
-    label: "user: {{ item.0.username }}"
+    label: >-
+      "user: {{ item.0.username }}
+      (key={{ item.1.pubkey | trim | truncate(45, true, '...') }}
+      key state={{ item.1.state }})"

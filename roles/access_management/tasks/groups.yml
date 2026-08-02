@@ -1,0 +1,52 @@
+---
+- name: Combine groups definitions
+  ansible.builtin.set_fact:
+    access_management_groups_list_combined: >-
+      {{
+        (access_management_groups_list | default([]))
+        + (access_management_groups_list_append | default([]))
+      }}
+
+- name: Validate group definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | default('') | length > 0
+      - item.state | default('') in ['present', 'absent']
+    quiet: true
+    fail_msg: >-
+      Invalid access management group definition:
+      {{ item }}
+  loop: "{{ access_management_groups_list_combined }}"
+  loop_control:
+    label: "group: {{ item.name | default('undefined') }}"
+
+- name: Validate unique groupnames
+  ansible.builtin.assert:
+    that:
+      - >-
+        (
+          access_management_groups_list_combined
+          | map(attribute='name')
+          | list
+          | length
+        )
+        ==
+        (
+          access_management_groups_list_combined
+          | map(attribute='name')
+          | unique
+          | list
+          | length
+        )
+    quiet: true
+    fail_msg: >-
+      access_management_groups_list and
+      access_management_groups_list_append contain duplicate groupnames.
+
+- name: Manage local groups
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    gid: "{{ item.gid | default(omit) }}"
+    system: "{{ item.system | default(false) }}"
+  loop: "{{ access_management_groups_list_combined }}"

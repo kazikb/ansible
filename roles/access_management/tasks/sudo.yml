@@ -1,0 +1,68 @@
+---
+- name: Manage local users sudo rules
+  when: access_management_users_list_prepared | length > 0
+  block:
+    - name: Configure local user sudo rules
+      ansible.builtin.template:
+        src: sudoers-user.j2
+        dest: "/etc/sudoers.d/90-access-management-user-{{ item.username }}"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+      when:
+        - item.state == 'present'
+        - >-
+          (item.sudo_nopasswd | default(false) | bool)
+          or (item.sudo_rules | default([]) | length > 0)
+      loop: "{{ access_management_users_list_prepared }}"
+      loop_control:
+        label: >-
+          user: {{ item.username }}
+          (sudo_nopasswd={{ item.sudo_nopasswd | default(false) | bool }}
+          custom_rules={{ item.sudo_rules | default([]) | length }})
+
+    - name: Remove unused local user sudo rules
+      ansible.builtin.file:
+        path: "/etc/sudoers.d/90-access-management-user-{{ item.username }}"
+        state: absent
+      when: >-
+        item.state == 'absent'
+        or (
+          not (item.sudo_nopasswd | default(false) | bool)
+          and (item.sudo_rules | default([]) | length == 0)
+        )
+      loop: "{{ access_management_users_list_prepared }}"
+      loop_control:
+        label: "user: {{ item.username }}"
+
+- name: Manage local groups sudo rules
+  when: access_management_users_list_prepared | length > 0
+  block:
+    - name: Configure local group sudo rules
+      ansible.builtin.template:
+        src: sudoers-group.j2
+        dest: "/etc/sudoers.d/90-access-management-group-{{ item.name }}"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+      when:
+        - item.state == 'present'
+        - item.sudo_rules | default([]) | length > 0
+      loop: "{{ access_management_groups_list_combined }}"
+      loop_control:
+        label: >-
+          group: {{ item.name }}
+          (custom_rules={{ item.sudo_rules | default([]) | length }})
+
+    - name: Remove unused local group sudo rules
+      ansible.builtin.file:
+        path: "/etc/sudoers.d/90-access-management-group-{{ item.name }}"
+        state: absent
+      when: >-
+        item.state == 'absent'
+        or (item.sudo_rules | default([]) | length == 0)
+      loop: "{{ access_management_groups_list_combined }}"
+      loop_control:
+        label: "group: {{ item.name }}"

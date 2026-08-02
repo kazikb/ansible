@@ -1,0 +1,5 @@
+---
+# vars file for system_baseline RedHat OS
+
+access_management_sudo_group: wheel
+access_management_sshd_service_name: sshd

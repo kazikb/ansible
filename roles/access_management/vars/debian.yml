@@ -1,0 +1,5 @@
+---
+# vars file for system_baseline Debian OS
+
+access_management_sudo_group: sudo
+access_management_sshd_service_name: ssh
