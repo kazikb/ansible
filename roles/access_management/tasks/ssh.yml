@@ -1,10 +1,10 @@
 ---
 - name: Enable ssh access management
-  when: access_management_manage_ssh_access
+  when: access_management_sshd_manage_access
   block:
     - name: Create SSH access group
       ansible.builtin.group:
-        name: "{{ access_management_ssh_access_group }}"
+        name: "{{ access_management_sshd_access_group }}"
         state: present
         system: true
 
@@ -12,7 +12,7 @@
       ansible.builtin.copy:
         content: |
           # Ansible managed
-          AllowGroups {{ access_management_ssh_access_group }}
+          AllowGroups {{ access_management_sshd_access_group }}
         dest: "{{ access_management_sshd_access_config_file }}"
         owner: root
         group: root
@@ -20,7 +20,7 @@
       notify: Validate and reload SSH service
 
 - name: Disable ssh access management
-  when: not access_management_manage_ssh_access
+  when: not access_management_sshd_manage_access
   block:
     - name: Remove SSH access control
       ansible.builtin.file:
@@ -30,5 +30,5 @@
 
     - name: Remove SSH access group
       ansible.builtin.group:
-        name: "{{ access_management_ssh_access_group }}"
+        name: "{{ access_management_sshd_access_group }}"
         state: absent

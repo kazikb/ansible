@@ -5,6 +5,25 @@
   tags:
   - access_management
   block:
+    - name: Combine groups definitions
+      ansible.builtin.set_fact:
+        access_management_groups_list_combined: >-
+          {{
+            (access_management_groups_list | default([]))
+            + (access_management_groups_list_append | default([]))
+          }}
+
+    - name: Combine user definitions
+      ansible.builtin.set_fact:
+        access_management_users_list_combined: >-
+          {{
+            (access_management_users_list | default([]))
+            + (access_management_users_list_append | default([]))
+          }}
+
+    - name: Validate access management configuration
+      ansible.builtin.import_tasks: validate.yml
+
     - name: Include OS-specific variables
       ansible.builtin.include_vars:
         file: "{{ ansible_facts['os_family'] | lower }}.yml"
@@ -14,13 +33,17 @@
 
     - name: Import groups tasks
       ansible.builtin.import_tasks: groups.yml
-      when: access_management_groups_list | length > 0
-        or access_management_groups_list_append | length > 0
+      when: access_management_groups_list_combined | length > 0
 
     - name: Import users tasks
       ansible.builtin.import_tasks: users.yml
-      when: access_management_users_list | length > 0
-        or access_management_users_list_append | length > 0
+      when: access_management_users_list_combined | length > 0
 
     - name: Import sudo tasks
       ansible.builtin.import_tasks: sudo.yml
+      when: >-
+        access_management_groups_list_combined | length > 0
+        or access_management_users_list_combined | length > 0
+
+    - name: Import root account tasks
+      ansible.builtin.import_tasks: root_account.yml

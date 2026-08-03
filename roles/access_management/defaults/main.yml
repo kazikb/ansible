@@ -2,9 +2,22 @@
 # defaults file for access_management
 
 # Manage SSH access for local users [true | false]
-access_management_manage_ssh_access: false
+access_management_sshd_manage_access: false
 # Group whose members are allowed to connect through SSH
-access_management_ssh_access_group: sshusers
+access_management_sshd_access_group: sshusers
+
+# root account manage
+# Lock the root account password [true | false]
+access_management_root_account_password_lock: true
+# Encrypted root password hash
+access_management_root_account_password: null
+# Root account login shell
+access_management_root_account_shell: /bin/bash
+# Root SSH authorized keys managed by this role
+# access_management_root_account_ssh_authorized_keys:
+#   - pubkey: "ssh-ed25519 AAAA..."
+#     state: present
+access_management_root_account_ssh_authorized_keys: []
 
 # Local groups to manage
 # access_management_groups_list:
@@ -38,7 +51,7 @@ access_management_groups_list_append: []
 #     groups:
 #       - platform
 #     ssh_authorized_keys:
-#       - key: "ssh-ed25519 AAAA..."
+#       - pubkey: "ssh-ed25519 AAAA..."
 #         state: present
 #     sudo: true # Add the OS-specific sudo or wheel group [true | false]
 #     sudo_nopasswd: true # Allow to use sudo without password [true | false]

@@ -15,7 +15,7 @@
         - >-
           (item.sudo_nopasswd | default(false) | bool)
           or (item.sudo_rules | default([]) | length > 0)
-      loop: "{{ access_management_users_list_prepared }}"
+      loop: "{{ access_management_users_list_combined }}"
       loop_control:
         label: >-
           user: {{ item.username }}
@@ -32,12 +32,12 @@
           not (item.sudo_nopasswd | default(false) | bool)
           and (item.sudo_rules | default([]) | length == 0)
         )
-      loop: "{{ access_management_users_list_prepared }}"
+      loop: "{{ access_management_users_list_combined }}"
       loop_control:
         label: "user: {{ item.username }}"
 
 - name: Manage local groups sudo rules
-  when: access_management_users_list_prepared | length > 0
+  when: access_management_groups_list_combined | length > 0
   block:
     - name: Configure local group sudo rules
       ansible.builtin.template:
