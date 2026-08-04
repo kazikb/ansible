@@ -38,7 +38,7 @@
           (
             [access_management_sshd_access_group]
             if (
-              access_management_sshd_manage_access
+              (access_management_sshd_manage_access | bool)
               and (item.ssh_access | default(false) | bool)
             )
             else []

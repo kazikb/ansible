@@ -51,4 +51,4 @@
 
     - name: Import root account tasks
       ansible.builtin.import_tasks: root_account.yml
-      when: access_management_root_account_manage
+      when: access_management_root_account_manage | bool

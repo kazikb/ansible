@@ -93,6 +93,20 @@ Root-account changes are applied only when
 `access_management_root_account_manage` is enabled. An encrypted password hash
 must be provided when password locking is disabled.
 
+When Ansible initially uses password-based `su` to become root, do not enable
+root-account management in the same run that creates the replacement sudo
+account. Locking the root password prevents subsequent `su` elevation, and the
+role cannot reliably detect a become method supplied only through the
+`ansible-playbook` command line.
+
+For the initial provisioning run, temporarily override
+`access_management_root_account_manage` to `false`. After the role creates the
+management account, reconnect with that account using `sudo` and run the
+playbook again with root-account management enabled. Do not use
+`access_management_root_account_password_lock: false` to defer the change;
+that value requests an unlocked root password and requires an encrypted root
+password hash.
+
 Each root authorized-key definition requires:
 
 - `pubkey` - SSH public key.

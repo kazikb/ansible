@@ -148,7 +148,7 @@
       }}
 
 - name: Validate root account
-  when: access_management_root_account_manage
+  when: access_management_root_account_manage | bool
   block:
     - name: Validate root account definition
       ansible.builtin.assert:

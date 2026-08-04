@@ -1,6 +1,6 @@
 ---
 - name: Enable SSH access management
-  when: access_management_sshd_manage_access
+  when: access_management_sshd_manage_access | bool
   block:
     - name: Create SSH access group
       ansible.builtin.group:
@@ -20,7 +20,7 @@
       notify: Validate and reload SSH service
 
 - name: Disable SSH access management
-  when: not access_management_sshd_manage_access
+  when: not (access_management_sshd_manage_access | bool)
   block:
     - name: Remove SSH access control
       ansible.builtin.file:
