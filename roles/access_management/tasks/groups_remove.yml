@@ -1,0 +1,9 @@
+---
+  - name: Ensure local groups are absent
+    ansible.builtin.group:
+      name: "{{ item.name }}"
+      state: absent
+    when: item.state == 'absent'
+    loop: "{{ access_management_groups_list_combined }}"
+    loop_control:
+      label: "group: {{ item.name }}"

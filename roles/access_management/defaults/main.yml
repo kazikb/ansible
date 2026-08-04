@@ -6,7 +6,8 @@ access_management_sshd_manage_access: false
 # Group whose members are allowed to connect through SSH
 access_management_sshd_access_group: sshusers
 
-# root account manage
+# Manage the root account.
+access_management_root_account_manage: false
 # Lock the root account password [true | false]
 access_management_root_account_password_lock: true
 # Encrypted root password hash

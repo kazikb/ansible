@@ -1,6 +1,6 @@
 ---
 - name: Manage local users sudo rules
-  when: access_management_users_list_prepared | length > 0
+  when: access_management_users_list_combined | length > 0
   block:
     - name: Configure local user sudo rules
       ansible.builtin.template:

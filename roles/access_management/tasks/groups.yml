@@ -2,7 +2,13 @@
 - name: Manage local groups
   ansible.builtin.group:
     name: "{{ item.name }}"
-    state: "{{ item.state }}"
+    state: present
     gid: "{{ item.gid | default(omit) }}"
     system: "{{ item.system | default(false) }}"
+  when: item.state == 'present'
   loop: "{{ access_management_groups_list_combined }}"
+  loop_control:
+    label: >-
+      group: {{ item.name }}
+      (state={{ item.state }}
+      system={{ item.system | default(false) | bool }})

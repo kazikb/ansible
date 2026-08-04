@@ -3,7 +3,7 @@
 
 - name: Apply access management
   tags:
-  - access_management
+    - access_management
   block:
     - name: Combine groups definitions
       ansible.builtin.set_fact:
@@ -45,5 +45,10 @@
         access_management_groups_list_combined | length > 0
         or access_management_users_list_combined | length > 0
 
+    - name: Import groups remove tasks
+      ansible.builtin.import_tasks: groups_remove.yml
+      when: access_management_groups_list_combined | length > 0
+
     - name: Import root account tasks
       ansible.builtin.import_tasks: root_account.yml
+      when: access_management_root_account_manage

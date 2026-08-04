@@ -110,25 +110,24 @@
 - name: Validate Ansible connection user SSH access
   ansible.builtin.assert:
     that:
-      - >-
-        not (
-          (item.username | default('')) == ansible_user
-          and
-          (
-            (item.state | default('present')) == 'absent'
-            or
-            not (item.ssh_access | default(false) | bool)
-          )
-        )
+      - ansible_user | default('') != 'root'
+      - ansible_user in access_management_ssh_access_usernames
     quiet: true
     fail_msg: >-
-      The current Ansible connection user
-      [{{ item.username | default('undefined') }}]
-      cannot be removed or have SSH access disabled.
-      Connect using another account before applying this change.
-  loop: "{{ access_management_users_list_combined }}"
-  loop_control:
-    label: "user: {{ item.username | default('undefined') }}"
+      SSH access management requires the current non-root Ansible
+      connection user [{{ ansible_user | default('undefined') }}]
+      to be managed with state: present and ssh_access: true.
+  vars:
+    access_management_ssh_access_usernames: >-
+      {{
+        access_management_users_list_combined
+        | selectattr('state', 'equalto', 'present')
+        | selectattr('ssh_access', 'defined')
+        | selectattr('ssh_access', 'equalto', true)
+        | map(attribute='username')
+        | list
+      }}
+  when: access_management_sshd_manage_access
 
 - name: Validate root account definition
   ansible.builtin.assert:

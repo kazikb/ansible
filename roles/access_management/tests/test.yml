@@ -1,5 +1,6 @@
 ---
-- hosts: localhost
+- name: Tests access_management
+  hosts: localhost
   remote_user: root
   roles:
     - access_management

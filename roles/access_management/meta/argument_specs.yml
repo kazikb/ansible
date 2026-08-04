@@ -1,0 +1,330 @@
+---
+argument_specs:
+  main:
+    short_description: Manage local user and group access
+    description:
+      - Manages local groups, user accounts, SSH authorized keys, sudo rules,
+        SSH access control, and the root account.
+    options:
+      access_management_sshd_manage_access:
+        description:
+          - Restricts SSH access to members of the configured SSH access group.
+        type: bool
+        default: false
+
+      access_management_sshd_access_group:
+        description: Specifies the group whose members are allowed to connect through SSH.
+        type: str
+        default: sshusers
+
+      access_management_root_account_manage:
+        description: Manage the root account.
+        type: bool
+        default: false
+
+      access_management_root_account_password_lock:
+        description: Locks password authentication for the root account.
+        type: bool
+        default: true
+
+      access_management_root_account_password:
+        description:
+          - Specifies the encrypted root account password hash.
+          - Required by the role when root password locking is disabled.
+        type: str
+        default: null
+
+      access_management_root_account_shell:
+        description: Specifies the root account login shell.
+        type: str
+        default: /bin/bash
+
+      access_management_root_account_ssh_authorized_keys:
+        description: A list of SSH authorized keys to manage for the root account.
+        type: list
+        elements: dict
+        default: []
+        options:
+          pubkey:
+            description: Specifies the SSH public key.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the SSH public key is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      access_management_groups_list:
+        description: A list of local groups to manage.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the local group name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the local group is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          gid:
+            description: Specifies the numeric group ID.
+            type: int
+          system:
+            description: Creates a system group when the group is added.
+            type: bool
+            default: false
+          sudo_rules:
+            description:
+              - A list of sudoers rules to apply to the group.
+              - Each entry follows the group name in the generated sudoers file.
+            type: list
+            elements: str
+            default: []
+
+      access_management_groups_list_append:
+        description: Additional local group definitions appended to the primary group list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the local group name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the local group is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          gid:
+            description: Specifies the numeric group ID.
+            type: int
+          system:
+            description: Creates a system group when the group is added.
+            type: bool
+            default: false
+          sudo_rules:
+            description:
+              - A list of sudoers rules to apply to the group.
+              - Each entry follows the group name in the generated sudoers file.
+            type: list
+            elements: str
+            default: []
+
+      access_management_users_list:
+        description: A list of local user accounts to manage.
+        type: list
+        elements: dict
+        default: []
+        options:
+          username:
+            description: Specifies the local account name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the local account is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          uid:
+            description: Specifies the numeric user ID.
+            type: int
+          password:
+            description: Specifies the encrypted account password hash.
+            type: str
+          password_lock:
+            description: Locks password authentication for the account.
+            type: bool
+          shell:
+            description: Specifies the account login shell.
+            type: str
+          comment:
+            description: Specifies the account description, also known as GECOS.
+            type: str
+          create_home:
+            description: Creates the account home directory when the account is added.
+            type: bool
+            default: true
+          home:
+            description: Specifies the account home directory path.
+            type: path
+          move_home:
+            description: Moves the existing home directory when its path changes.
+            type: bool
+            default: false
+          group:
+            description: Specifies the account primary group.
+            type: str
+          groups:
+            description:
+              - A list of existing supplementary groups for the account.
+              - Reserved sudo and SSH access groups must use the dedicated options.
+            type: list
+            elements: str
+            default: []
+          umask:
+            description: Specifies the account umask.
+            type: str
+          system:
+            description: Creates a system account when the account is added.
+            type: bool
+            default: false
+          remove:
+            description: Removes the account home directory and mail spool with an absent account.
+            type: bool
+            default: false
+          sudo:
+            description: Adds the account to the operating system's sudo group.
+            type: bool
+            default: false
+          sudo_nopasswd:
+            description:
+              - Allows the account to use sudo without a password.
+              - Requires the sudo option to be enabled.
+            type: bool
+            default: false
+          sudo_rules:
+            description:
+              - A list of custom sudoers rules to apply to the account.
+              - Each entry follows the account name in the generated sudoers file.
+            type: list
+            elements: str
+            default: []
+          ssh_access:
+            description:
+              - Adds the account to the SSH access group when SSH access management is enabled.
+            type: bool
+            default: false
+          ssh_authorized_keys:
+            description: A list of SSH authorized keys to manage for the account.
+            type: list
+            elements: dict
+            default: []
+            options:
+              pubkey:
+                description: Specifies the SSH public key.
+                type: str
+                required: true
+              state:
+                description: Specifies whether the SSH public key is present or absent.
+                type: str
+                choices:
+                  - absent
+                  - present
+                required: true
+
+      access_management_users_list_append:
+        description: Additional local user definitions appended to the primary user list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          username:
+            description: Specifies the local account name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the local account is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          uid:
+            description: Specifies the numeric user ID.
+            type: int
+          password:
+            description: Specifies the encrypted account password hash.
+            type: str
+          password_lock:
+            description: Locks password authentication for the account.
+            type: bool
+          shell:
+            description: Specifies the account login shell.
+            type: str
+          comment:
+            description: Specifies the account description, also known as GECOS.
+            type: str
+          create_home:
+            description: Creates the account home directory when the account is added.
+            type: bool
+            default: true
+          home:
+            description: Specifies the account home directory path.
+            type: path
+          move_home:
+            description: Moves the existing home directory when its path changes.
+            type: bool
+            default: false
+          group:
+            description: Specifies the account primary group.
+            type: str
+          groups:
+            description:
+              - A list of existing supplementary groups for the account.
+              - Reserved sudo and SSH access groups must use the dedicated options.
+            type: list
+            elements: str
+            default: []
+          umask:
+            description: Specifies the account umask.
+            type: str
+          system:
+            description: Creates a system account when the account is added.
+            type: bool
+            default: false
+          remove:
+            description: Removes the account home directory and mail spool with an absent account.
+            type: bool
+            default: false
+          sudo:
+            description: Adds the account to the operating system's sudo group.
+            type: bool
+            default: false
+          sudo_nopasswd:
+            description:
+              - Allows the account to use sudo without a password.
+              - Requires the sudo option to be enabled.
+            type: bool
+            default: false
+          sudo_rules:
+            description:
+              - A list of custom sudoers rules to apply to the account.
+              - Each entry follows the account name in the generated sudoers file.
+            type: list
+            elements: str
+            default: []
+          ssh_access:
+            description:
+              - Adds the account to the SSH access group when SSH access management is enabled.
+            type: bool
+            default: false
+          ssh_authorized_keys:
+            description: A list of SSH authorized keys to manage for the account.
+            type: list
+            elements: dict
+            default: []
+            options:
+              pubkey:
+                description: Specifies the SSH public key.
+                type: str
+                required: true
+              state:
+                description: Specifies whether the SSH public key is present or absent.
+                type: str
+                choices:
+                  - absent
+                  - present
+                required: true

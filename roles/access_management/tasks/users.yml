@@ -79,6 +79,8 @@
       sudo={{ item.sudo | default(false) | bool }}
       sudo_nopasswd={{ item.sudo_nopasswd | default(false) | bool }}
       ssh_access={{ item.ssh_access | default(false) | bool }}
+      system={{ item.system | default(false) | bool }}
+      create_home={{ item.create_home | default(true) | bool }}
       groups={{ item.groups_to_apply }})
 
 - name: Manage local users authorized keys
