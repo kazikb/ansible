@@ -1,5 +1,5 @@
 ---
-- name: Enable ssh access management
+- name: Enable SSH access management
   when: access_management_sshd_manage_access
   block:
     - name: Create SSH access group
@@ -19,7 +19,7 @@
         mode: "0600"
       notify: Validate and reload SSH service
 
-- name: Disable ssh access management
+- name: Disable SSH access management
   when: not access_management_sshd_manage_access
   block:
     - name: Remove SSH access control

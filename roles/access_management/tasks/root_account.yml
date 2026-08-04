@@ -8,7 +8,7 @@
     shell: "{{ access_management_root_account_shell | default(omit, true) }}"
     update_password: always
 
-- name: Manage root user authorized keys
+- name: Manage root SSH authorized keys
   ansible.posix.authorized_key:
     user: root
     state: "{{ item.state }}"

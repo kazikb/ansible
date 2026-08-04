@@ -1,5 +1,5 @@
 ---
-- name: Manage local groups
+- name: Ensure local groups are present
   ansible.builtin.group:
     name: "{{ item.name }}"
     state: present

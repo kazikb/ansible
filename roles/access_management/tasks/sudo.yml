@@ -1,8 +1,8 @@
 ---
-- name: Manage local users sudo rules
+- name: Manage sudo rules for local users
   when: access_management_users_list_combined | length > 0
   block:
-    - name: Configure local user sudo rules
+    - name: Configure sudo rules for local users
       ansible.builtin.template:
         src: sudoers-user.j2
         dest: "/etc/sudoers.d/90-access-management-user-{{ item.username }}"
@@ -22,7 +22,7 @@
           (sudo_nopasswd={{ item.sudo_nopasswd | default(false) | bool }}
           custom_rules={{ item.sudo_rules | default([]) | length }})
 
-    - name: Remove unused local user sudo rules
+    - name: Remove unused sudo rules for local users
       ansible.builtin.file:
         path: "/etc/sudoers.d/90-access-management-user-{{ item.username }}"
         state: absent
@@ -36,10 +36,10 @@
       loop_control:
         label: "user: {{ item.username }}"
 
-- name: Manage local groups sudo rules
+- name: Manage sudo rules for local groups
   when: access_management_groups_list_combined | length > 0
   block:
-    - name: Configure local group sudo rules
+    - name: Configure sudo rules for local groups
       ansible.builtin.template:
         src: sudoers-group.j2
         dest: "/etc/sudoers.d/90-access-management-group-{{ item.name }}"
@@ -56,7 +56,7 @@
           group: {{ item.name }}
           (custom_rules={{ item.sudo_rules | default([]) | length }})
 
-    - name: Remove unused local group sudo rules
+    - name: Remove unused sudo rules for local groups
       ansible.builtin.file:
         path: "/etc/sudoers.d/90-access-management-group-{{ item.name }}"
         state: absent

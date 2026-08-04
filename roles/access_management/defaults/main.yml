@@ -1,12 +1,14 @@
 ---
-# defaults file for access_management
+# Default variables for the access_management role
 
-# Manage SSH access for local users [true | false]
+# SSH access management
+# Restrict SSH access to members of the configured access group [true | false]
 access_management_sshd_manage_access: false
 # Group whose members are allowed to connect through SSH
 access_management_sshd_access_group: sshusers
 
-# Manage the root account.
+# Root account management
+# Manage the root account [true | false]
 access_management_root_account_manage: false
 # Lock the root account password [true | false]
 access_management_root_account_password_lock: true
@@ -54,8 +56,8 @@ access_management_groups_list_append: []
 #     ssh_authorized_keys:
 #       - pubkey: "ssh-ed25519 AAAA..."
 #         state: present
-#     sudo: true # Add the OS-specific sudo or wheel group [true | false]
-#     sudo_nopasswd: true # Allow to use sudo without password [true | false]
+#     sudo: true # Add the account to the OS-specific sudo or wheel group [true | false]
+#     sudo_nopasswd: true # Allow passwordless sudo access [true | false]
 #
 #   # Application user
 #   - username: application
@@ -94,11 +96,11 @@ access_management_groups_list_append: []
 #     comment: Administrative User
 #     shell: /bin/bash
 #     create_home: true
-#     sudo: true # Add the OS-specific sudo or wheel group [true | false]
+#     sudo: true # Add the account to the OS-specific sudo or wheel group [true | false]
 #     groups:
 #       - developers
 #       - docker
-#     ssh_access: true # Allow access through ssh [true | false]
+#     ssh_access: true # Allow SSH access [true | false]
 #     ssh_authorized_keys:
 #       - pubkey: "ssh-ed25519 AAAA... admin_user"
 #         state: present

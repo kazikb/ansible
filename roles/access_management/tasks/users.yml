@@ -1,13 +1,13 @@
 ---
-- name: Get list of existing groups
+- name: Gather existing group information
   ansible.builtin.getent:
     database: group
 
-- name: Initialize prepared users list
+- name: Initialize prepared user list
   ansible.builtin.set_fact:
     access_management_users_list_prepared: []
 
-- name: Prepare users group membership
+- name: Prepare user group memberships
   ansible.builtin.set_fact:
     access_management_users_list_prepared: >-
       {{
@@ -83,7 +83,7 @@
       create_home={{ item.create_home | default(true) | bool }}
       groups={{ item.groups_to_apply }})
 
-- name: Manage local users authorized keys
+- name: Manage SSH authorized keys for local users
   ansible.posix.authorized_key:
     user: "{{ item.0.username }}"
     state: "{{ item.1.state }}"

@@ -12,7 +12,7 @@
   loop_control:
     label: "group: {{ item.name | default('undefined') }}"
 
-- name: Validate unique groupnames
+- name: Validate unique group names
   ansible.builtin.assert:
     that:
       - >-
@@ -33,7 +33,7 @@
     quiet: true
     fail_msg: >-
       access_management_groups_list and
-      access_management_groups_list_append contain duplicate groupnames.
+      access_management_groups_list_append contain duplicate group names.
 
 - name: Validate user definitions
   ansible.builtin.assert:
@@ -89,7 +89,7 @@
       access_management_users_list and
       access_management_users_list_append contain duplicate usernames.
 
-- name: Validate authorized key definitions
+- name: Validate user SSH authorized key definitions
   ansible.builtin.assert:
     that:
       - item.1.pubkey | default('') | trim | length > 0
@@ -107,17 +107,36 @@
   loop_control:
     label: "user: {{ item.0.username | default('undefined') }}"
 
-- name: Validate Ansible connection user SSH access
+- name: Validate Ansible connection user
   ansible.builtin.assert:
     that:
-      - ansible_user | default('') != 'root'
-      - ansible_user in access_management_ssh_access_usernames
+      - >-
+          (ansible_user | default(''))
+          not in access_management_absent_usernames
+      - >-
+          not (access_management_sshd_manage_access | bool)
+          or (ansible_user | default('')) != 'root'
+      - >-
+          not (access_management_sshd_manage_access | bool)
+          or (
+            (ansible_user | default(''))
+            in access_management_ssh_access_usernames
+          )
     quiet: true
     fail_msg: >-
-      SSH access management requires the current non-root Ansible
-      connection user [{{ ansible_user | default('undefined') }}]
-      to be managed with state: present and ssh_access: true.
+      The current Ansible connection user
+      [{{ ansible_user | default('undefined') }}] cannot be removed.
+      When SSH access management is enabled, the connection user must
+      be a non-root account managed with state: present and
+      ssh_access: true.
   vars:
+    access_management_absent_usernames: >-
+      {{
+        access_management_users_list_combined
+        | selectattr('state', 'equalto', 'absent')
+        | map(attribute='username')
+        | list
+      }}
     access_management_ssh_access_usernames: >-
       {{
         access_management_users_list_combined
@@ -127,33 +146,35 @@
         | map(attribute='username')
         | list
       }}
-  when: access_management_sshd_manage_access
 
-- name: Validate root account definition
-  ansible.builtin.assert:
-    that:
-      - >-
-          (access_management_root_account_password_lock | bool)
-          or
-          (
-            access_management_root_account_password is not none
-            and
-            access_management_root_account_password | length > 0
-          )
-    quiet: true
-    fail_msg: >-
-      An encrypted root account password hash is required when
-      password locking is disabled.
+- name: Validate root account
+  when: access_management_root_account_manage
+  block:
+    - name: Validate root account definition
+      ansible.builtin.assert:
+        that:
+          - >-
+              (access_management_root_account_password_lock | bool)
+              or
+              (
+                access_management_root_account_password is not none
+                and
+                access_management_root_account_password | length > 0
+              )
+        quiet: true
+        fail_msg: >-
+          An encrypted root account password hash is required when
+          password locking is disabled.
 
-- name: Validate root account authorized key definitions
-  ansible.builtin.assert:
-    that:
-      - item.pubkey | default('') | trim | length > 0
-      - item.state | default('') in ['present', 'absent']
-    fail_msg: >-
-      Invalid authorized key definition for user root:
-      {{ item }}
-    quiet: true
-  loop: "{{ access_management_root_account_ssh_authorized_keys }}"
-  loop_control:
-    label: "user: root"
+    - name: Validate root SSH authorized key definitions
+      ansible.builtin.assert:
+        that:
+          - item.pubkey | default('') | trim | length > 0
+          - item.state | default('') in ['present', 'absent']
+        fail_msg: >-
+          Invalid authorized key definition for user root:
+          {{ item }}
+        quiet: true
+      loop: "{{ access_management_root_account_ssh_authorized_keys }}"
+      loop_control:
+        label: "user: root"

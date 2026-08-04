@@ -5,7 +5,7 @@
   tags:
     - access_management
   block:
-    - name: Combine groups definitions
+    - name: Combine group definitions
       ansible.builtin.set_fact:
         access_management_groups_list_combined: >-
           {{
@@ -28,24 +28,24 @@
       ansible.builtin.include_vars:
         file: "{{ ansible_facts['os_family'] | lower }}.yml"
 
-    - name: Import ssh tasks
+    - name: Import SSH tasks
       ansible.builtin.import_tasks: ssh.yml
 
-    - name: Import groups tasks
+    - name: Import group creation tasks
       ansible.builtin.import_tasks: groups.yml
       when: access_management_groups_list_combined | length > 0
 
-    - name: Import users tasks
+    - name: Import user tasks
       ansible.builtin.import_tasks: users.yml
       when: access_management_users_list_combined | length > 0
 
-    - name: Import sudo tasks
+    - name: Import sudo rule tasks
       ansible.builtin.import_tasks: sudo.yml
       when: >-
         access_management_groups_list_combined | length > 0
         or access_management_users_list_combined | length > 0
 
-    - name: Import groups remove tasks
+    - name: Import group removal tasks
       ansible.builtin.import_tasks: groups_remove.yml
       when: access_management_groups_list_combined | length > 0
 
