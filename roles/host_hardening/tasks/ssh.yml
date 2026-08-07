@@ -1,0 +1,32 @@
+---
+- name: Update SSH configuration file
+  ansible.builtin.template:
+    src: openssh-sshd_config.j2
+    dest: "{{ host_hardening_sshd_config_file }}"
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify:
+    - Validate SSH daemon configuration
+    - Reload SSH service
+
+- name: Check for short SSH Diffie-Hellman moduli
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: >-
+      awk '$1 !~ /^#/ && NF >= 5 && $5 < 3071 { exit 1 }'
+      /etc/ssh/moduli
+  register: host_hardening_sshd_short_moduli_result
+  changed_when: false
+  failed_when:
+    - host_hardening_sshd_short_moduli_result.rc not in [0, 1]
+
+- name: Deactivate short SSH Diffie-Hellman moduli
+  ansible.builtin.shell:
+    executable: /bin/bash
+    cmd: >-
+      awk '$1 ~ /^#/ || NF == 0 || $5 >= 3071'
+      /etc/ssh/moduli > /etc/ssh/moduli.tmp
+      && mv /etc/ssh/moduli.tmp /etc/ssh/moduli
+  when: host_hardening_sshd_short_moduli_result.rc == 1

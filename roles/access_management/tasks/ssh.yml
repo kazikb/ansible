@@ -17,7 +17,9 @@
         owner: root
         group: root
         mode: "0600"
-      notify: Validate and reload SSH service
+      notify:
+        - Validate SSH daemon configuration
+        - Reload SSH service
 
 - name: Disable SSH access management
   when: not (access_management_sshd_manage_access | bool)
@@ -26,7 +28,9 @@
       ansible.builtin.file:
         path: "{{ access_management_sshd_access_config_file }}"
         state: absent
-      notify: Validate and reload SSH service
+      notify:
+        - Validate SSH daemon configuration
+        - Reload SSH service
 
     - name: Remove SSH access group
       ansible.builtin.group:

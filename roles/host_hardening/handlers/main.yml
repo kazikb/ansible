@@ -1,11 +1,18 @@
 ---
-# handlers file for linux_security
+# handlers file for host_hardening
 
-# https://docs.ansible.com/ansible/latest/modules/service_module.html
-- name: restart sshd
-  ansible.builtin.service:
-    name: "{{ linux_security_sshd_service_name }}"
-    state: restarted
+# Keep these handler names and their order aligned with other roles
+# that manage SSH daemon configuration. Identical names ensure that
+# SSH validation and reload run only once per handler flush.
+- name: Validate SSH daemon configuration
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: Reload SSH service
+  ansible.builtin.systemd_service:
+    name: "{{ host_hardening_sshd_service_name }}"
+    state: reloaded
 
 - name: reload ufw
   community.general.ufw:
@@ -16,7 +23,6 @@
     state: restarted
     name: firewalld.service
 
-# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html#ansible-collections-ansible-builtin-systemd-module
 - name: reload systemd
   ansible.builtin.systemd:
     daemon_reload: yes
