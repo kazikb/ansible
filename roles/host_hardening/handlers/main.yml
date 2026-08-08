@@ -4,6 +4,9 @@
 # Keep these handler names and their order aligned with other roles
 # that manage SSH daemon configuration. Identical names ensure that
 # SSH validation and reload run only once per handler flush.
+# Roles using this handlers:
+# - access_management
+# - host_hardening
 - name: Validate SSH daemon configuration
   ansible.builtin.command:
     cmd: /usr/sbin/sshd -t
@@ -24,11 +27,8 @@
   community.general.ufw:
     state: reloaded
 
-- name: restart firewalld
-  ansible.builtin.systemd:
-    state: restarted
+- name: Reload firewalld service
+  when: host_hardening_firewall_enabled | bool
+  ansible.builtin.systemd_service:
     name: firewalld.service
-
-- name: reload systemd
-  ansible.builtin.systemd:
-    daemon_reload: yes
+    state: reloaded

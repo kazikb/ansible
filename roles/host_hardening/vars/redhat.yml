@@ -2,3 +2,4 @@
 # vars file for host_hardening RedHat OS
 
 host_hardening_sshd_service_name: sshd
+host_hardening_firewall_firewalld_default_zone: public
