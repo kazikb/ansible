@@ -122,8 +122,8 @@ argument_specs:
               - udp
             required: true
           destination_port:
-            description: Specifies the destination port matched by the rule.
-            type: int
+            description: Specifies a destination port or inclusive port range using start-end syntax.
+            type: str
             required: true
           source:
             description:
@@ -157,8 +157,8 @@ argument_specs:
               - udp
             required: true
           destination_port:
-            description: Specifies the destination port matched by the rule.
-            type: int
+            description: Specifies a destination port or inclusive port range using start-end syntax.
+            type: str
             required: true
           source:
             description:

@@ -19,7 +19,8 @@
     name: nftables.service
     state: reloaded
 
-- name: reload ufw
+- name: Reload ufw service
+  when: host_hardening_firewall_enabled | bool
   community.general.ufw:
     state: reloaded
 

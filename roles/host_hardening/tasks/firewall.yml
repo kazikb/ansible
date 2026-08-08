@@ -1,43 +1,4 @@
 ---
-# - name: Tasks on Debian/Ubuntu OS
-#   block:
-#     # https://wiki.ubuntu.com/UncomplicatedFirewall
-#     # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
-#     - name: Install ufw
-#       ansible.builtin.apt:
-#         name: ufw
-#         state: present
-#         update_cache: yes
-
-#     - name: Set ufw logging
-#       community.general.ufw:
-#         logging: "{{ linux_security_ufw_logging }}"
-#       when: linux_security_ufw_logging is defined
-
-#     # https://docs.ansible.com/ansible/latest/collections/community/general/ufw_module.html
-#     - name: Add ufw rules
-#       community.general.ufw:
-#         delete: "{{ item.delete | default(omit) }}"
-#         direction: "{{ item.direction }}"
-#         from_ip: "{{ item.from_ip | default(omit) }}"
-#         from_port: "{{ item.from_port | default(omit) }}"
-#         interface: "{{ item.interface | default(omit) }}"
-#         log: "{{ item.log | default(omit) }}"
-#         proto: "{{ item.proto }}"
-#         rule: "{{ item.rule }}"
-#         to_ip: "{{ item.to_ip | default(omit) }}"
-#         to_port: "{{ item.to_port }}"
-#         comment: "{{ item.comment | default(omit) }}"
-#       loop: "{{ linux_security_ufw_rules_list }}"
-#       when: linux_security_ufw_rules_list is defined
-#       notify:
-#         - reload ufw
-
-#     - name: Enable ufw
-#       community.general.ufw:
-#         state: enabled
-#   when: ansible_os_family == 'Debian'
-
 # - name: Tasks on RedHat OS
 #   block:
 #     - name: Install firewalld
@@ -144,9 +105,58 @@
 - name: Manage Firewall settings on Ubuntu
   when: ansible_facts['distribution'] == 'Ubuntu'
   block:
-    - name: Debug task
-      ansible.builtin.debug:
-        msg: Ubuntu distribution {{ ansible_facts['distribution'] }}
+    - name: Ensure ufw is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+        update_cache: true
+        cache_valid_time: "{{ host_hardening_apt_cache_valid_time }}"
+
+    - name: Enable IPv6 support in ufw
+      ansible.builtin.lineinfile:
+        path: /etc/default/ufw
+        regexp: '^IPV6='
+        line: IPV6=yes
+      notify: Reload ufw service
+
+    - name: Set default ufw policy incoming
+      when: host_hardening_firewall_enabled | bool
+      community.general.ufw:
+        default: "{{ 'reject' if host_hardening_firewall_default_incoming_policy == 'reject' else 'deny' }}"
+        direction: incoming
+
+    - name: Set default ufw policy outgoing
+      when: host_hardening_firewall_enabled | bool
+      community.general.ufw:
+        default: allow
+        direction: outgoing
+
+    - name: Manage ufw rules
+      when: host_hardening_firewall_enabled | bool
+      community.general.ufw:
+        rule: allow
+        delete: "{{ item.state == 'absent' }}"
+        direction: in
+        proto: "{{ item.protocol }}"
+        to_port: "{{ item.destination_port | string | replace('-', ':') }}"
+        from_ip: "{{ item.source }}"
+        comment: "Ansible managed: {{ item.name }}"
+      loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+
+    - name: Set ufw logging
+      when: host_hardening_firewall_enabled | bool
+      community.general.ufw:
+        logging: "{{ 'on' if (host_hardening_firewall_logging | bool) else 'off' }}"
+
+    - name: Enable ufw service
+      when: host_hardening_firewall_enabled | bool
+      community.general.ufw:
+        state: enabled
+
+    - name: Disable ufw service
+      when: not (host_hardening_firewall_enabled | bool)
+      community.general.ufw:
+        state: disabled
 
 - name: Manage Firewall settings on RedHat
   when:
