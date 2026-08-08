@@ -1,1 +1,81 @@
 ---
+- name: Validate firewall ingress rule definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | trim | length > 0
+      - item.name is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+      - item.destination_port >= 1
+      - item.destination_port <= 65535
+      - >-
+        item.source == 'any'
+        or (item.source | ansible.utils.ipv4) is not false
+        or (item.source | ansible.utils.ipv6) is not false
+      - >-
+        host_hardening_firewall_ingress_rules_list_combined
+        | selectattr('name', 'equalto', item.name)
+        | list
+        | length == 1
+      - >-
+        host_hardening_firewall_ingress_rules_list_combined
+        | selectattr('source', 'equalto', item.source)
+        | selectattr('protocol', 'equalto', item.protocol)
+        | selectattr(
+            'destination_port',
+            'equalto',
+            item.destination_port
+          )
+        | list
+        | length == 1
+    quiet: true
+    fail_msg: >-
+      Invalid or duplicate firewall ingress rule:
+      {{ item }}.
+  loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+  loop_control:
+    label: "rule: {{ item.name }}"
+
+- name: Validate SSH firewall access
+  ansible.builtin.assert:
+    that:
+      - host_hardening_sshd_listen_ports | length > 0
+      - >-
+        host_hardening_sshd_listen_ports
+        | difference(host_hardening_firewall_present_tcp_ports)
+        | length == 0
+    quiet: true
+    fail_msg: >-
+      The firewall does not permit all ports currently used by sshd.
+      Listening SSH ports:
+      {{ host_hardening_sshd_listen_ports }}.
+      Missing firewall ports:
+      {{
+        host_hardening_sshd_listen_ports
+        | difference(host_hardening_firewall_present_tcp_ports)
+      }}.
+  vars:
+    host_hardening_sshd_listen_ports: >-
+      {{
+        ansible_facts.tcp_listen
+        | selectattr('name', 'defined')
+        | selectattr('name', 'equalto', 'sshd')
+        | map(attribute='port')
+        | map('int')
+        | unique
+        | sort
+        | list
+      }}
+
+    host_hardening_firewall_present_tcp_ports: >-
+      {{
+        host_hardening_firewall_ingress_rules_list_combined
+        | selectattr('state', 'equalto', 'present')
+        | selectattr('protocol', 'equalto', 'tcp')
+        | map(attribute='destination_port')
+        | map('int')
+        | unique
+        | sort
+        | list
+      }}
+  when:
+    - host_hardening_firewall_manage | bool
+    - host_hardening_firewall_enabled | bool

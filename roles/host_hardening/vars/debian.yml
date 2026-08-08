@@ -1,4 +1,6 @@
 ---
 # vars file for host_hardening Debian OS
 
+host_hardening_apt_cache_valid_time: 3600 # 1 hour
 host_hardening_sshd_service_name: ssh
+host_hardening_firewall_nftables_config_file: /etc/nftables.conf

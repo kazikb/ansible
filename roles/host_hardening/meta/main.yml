@@ -29,16 +29,13 @@ galaxy_info:
   platforms:
     - name: EL
       versions:
-        - 8
-        - 9
+        - "10"
     - name: Ubuntu
       versions:
-        - 20.04
-        - 22.04
+        - noble
     - name: Debian
       versions:
-        - 10
-        - 11
+        - trixie
 
   galaxy_tags: []
     # List tags for your role here, one per line. A tag is a keyword that describes

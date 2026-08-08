@@ -5,8 +5,22 @@
   tags:
     - host_hardening
   block:
-    # - name: Validate system baseline configuration
-    #   ansible.builtin.import_tasks: validate.yml
+    - name: Combine firewall ingress rules definitions
+      ansible.builtin.set_fact:
+        host_hardening_firewall_ingress_rules_list_combined: >-
+          {{
+            (host_hardening_firewall_ingress_rules_list | default([]))
+            + (host_hardening_firewall_ingress_rules_list_append | default([]))
+          }}
+
+    - name: Gather facts on listening ports
+      community.general.listen_ports_facts:
+      when:
+        - host_hardening_firewall_manage | bool
+        - host_hardening_firewall_enabled | bool
+
+    - name: Validate system baseline configuration
+      ansible.builtin.import_tasks: validate.yml
 
     - name: Include OS-specific variables
       ansible.builtin.include_vars:
@@ -16,5 +30,6 @@
       ansible.builtin.import_tasks: ssh.yml
       when: host_hardening_sshd_manage | bool
 
-    # - name: Import firewall tasks
-    #   ansible.builtin.import_tasks: "firewall.yml"
+    - name: Import firewall tasks
+      ansible.builtin.import_tasks: "firewall.yml"
+      when: host_hardening_firewall_manage | bool

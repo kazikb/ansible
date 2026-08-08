@@ -31,48 +31,31 @@ host_hardening_sshd_host_key_algorithms: []
 # SSH user public-key signature algorithms
 host_hardening_sshd_pubkey_accepted_algorithms: []
 
+# Host firewall management
+# Manage the host firewall [true | false]
+host_hardening_firewall_manage: false
+# Enable the firewall service and start it at boot [true | false]
+host_hardening_firewall_enabled: true
+# Enable native logging of denied firewall traffic. [true | false]
+host_hardening_firewall_logging: false
+# Default policy for unmatched incoming traffic
+# drop: silently discard packets
+# reject: discard packets and return an error response
+# ['drop' | 'reject']
+host_hardening_firewall_default_incoming_policy: drop
+# Ingress firewall rules managed by this role
+# host_hardening_firewall_ingress_rules_list:
+#   - name: ssh-access # Unique rule name
+#     state: present # absent | present
+#     protocol: tcp # tcp | udp
+#     destination_port: 22 # Destination port from 1 through 65535
+#     source: any # any, an IP address, or a CIDR network
+#   - name: https-access
+#     state: present
+#     protocol: tcp
+#     destination_port: 443
+#     source: 192.168.1.0/24
+host_hardening_firewall_ingress_rules_list: []
 
-# region Debian based OS
-
-# Uncomplicated Firewall
-linux_security_ufw_default_list:
-  - { direction: incoming, policy: deny }
-  - { direction: outgoing, policy: allow }
-linux_security_ufw_logging: 'on' # toggles logging. Logged packets use the LOG_KERN syslog facility [on, off, low, medium, high, full]
-
-linux_security_ufw_rules_list:
-  - rule: allow # add firewall rule [allow, deny, limit, reject]
-    delete: 'no'  # delete rule [yes/no]
-    direction: in  # select direction for a rule [in, incoming, out, outgoing, routed]
-#    from_ip: 1.2.3.4 # source IP address
-#    from_port: 12345  # source port
-#    interface: eth0  # specify interface for the rule
-#    log: 'yes'  # log new connections matched to this rule [yes/no]
-    proto: tcp  # TCP/IP protocol [any, tcp, udp, ipv6, esp, ah, gre, igmp]
-#    to_ip: 1.2.3.4  # destination IP address
-    to_port: 22  # destination port
-    comment: 'Allow SSH'
-
-# endregion Debian based OS
-
-# region RedHat based OS
-
-# Firewalld service
-# Ansible module documentation:
-linux_security_firewalld_rules_list:
-  - state: enabled # for service and ports [disabled, enabled] for zones [present, absent]
-    # icmp_block: # icmp types to block "firewall-cmd --get-icmptypes"
-    # icmp_block_inversion: # [Enable/Disable] inversion of ICMP blocks for a zone in firewalld
-    # immediate: # [yes/no] should this configuration be applied immediately, if set as permanent (default no)
-    # interface: # interface to add/remove to/from a zone
-    # offline: # [yes/no] whether to run this module even when firewalld is offline.
-    permanent: yes # [yes/no] should this configuration be in the running firewalld configuration or persist across reboots
-    # port: # port or port range to add/remove to/from firewalld [PORT/PROTOCOL, PORT-PORT/PROTOCOL]
-    # rich_rule: # rich rule to add/remove to/from firewalld https://firewalld.org/documentation/man-pages/firewalld.richlanguage.html
-    service: ssh # service name to add/remove "firewall-cmd --get-services"
-    # source: # source ip/network
-    # target: # firewalld Zone target [default, ACCEPT, DROP, %%REJECT%%]
-    # timeout: # the amount of time in seconds the rule should be in effect for when non-permanent
-    zone: public # firewalld zone to add/remove to/from [block, dmz, drop, external, home, internal, public, trusted, work] (default public)
-
-# endregion RedHat based OS
+# Additional ingress firewall rules appended to host_hardening_firewall_ingress_rules_list
+host_hardening_firewall_ingress_rules_list_append: []
