@@ -13,6 +13,14 @@
             + (host_hardening_firewall_ingress_rules_list_append | default([]))
           }}
 
+    - name: Combine sysctl parameters definitions
+      ansible.builtin.set_fact:
+        host_hardening_sysctl_params_list_combined: >-
+          {{
+            (host_hardening_sysctl_params_list | default([]))
+            + (host_hardening_sysctl_params_list_append | default([]))
+          }}
+
     - name: Gather facts on listening ports
       community.general.listen_ports_facts:
       when:
@@ -33,3 +41,6 @@
     - name: Import firewall tasks
       ansible.builtin.import_tasks: "firewall.yml"
       when: host_hardening_firewall_manage | bool
+
+    - name: Import sysctl tasks
+      ansible.builtin.import_tasks: "sysctl.yml"

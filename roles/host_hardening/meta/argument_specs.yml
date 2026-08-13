@@ -1,10 +1,10 @@
 ---
 argument_specs:
   main:
-    short_description: Harden SSH and configure the host firewall
+    short_description: Harden SSH, configure the host firewall, and manage sysctl parameters
     description:
-      - Hardens the OpenSSH server and manages the host firewall using the
-        operating system's native firewall backend.
+      - Hardens the OpenSSH server, manages the host firewall using the
+        operating system's native firewall backend, and manages sysctl parameters.
     options:
       host_hardening_sshd_manage:
         description: Manages the SSH daemon hardening configuration.
@@ -164,4 +164,48 @@ argument_specs:
             description:
               - Specifies any, an IP address, or a CIDR network as the packet source.
             type: str
+            required: true
+
+      host_hardening_sysctl_params_list:
+        description:
+          - A list of sysctl parameters managed by this role.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the sysctl parameter name.
+            type: str
+            required: true
+          value:
+            description: Specifies the desired value when state is present.
+            type: str
+          state:
+            description: Specifies whether the sysctl parameter is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      host_hardening_sysctl_params_list_append:
+        description:
+          - Additional sysctl parameters appended to the primary parameter list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the sysctl parameter name.
+            type: str
+            required: true
+          value:
+            description: Specifies the desired value when state is present.
+            type: str
+          state:
+            description: Specifies whether the sysctl parameter is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
             required: true

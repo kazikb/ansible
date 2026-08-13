@@ -64,3 +64,18 @@ host_hardening_firewall_ingress_rules_list: []
 
 # Additional ingress firewall rules appended to host_hardening_firewall_ingress_rules_list
 host_hardening_firewall_ingress_rules_list_append: []
+
+# Sysctl parameters managed by this role
+# Parameters omitted from this list are not changed. Use state: absent to remove
+# a parameter from the role-managed sysctl file; value is only required for
+# state: present.
+# host_hardening_sysctl_params_list:
+#   - name: kernel.randomize_va_space
+#     value: "2"
+#     state: present
+#   - name: kernel.panic
+#     state: absent
+host_hardening_sysctl_params_list: []
+
+# Additional sysctl parameters appended to host_hardening_sysctl_params_list
+host_hardening_sysctl_params_list_append: []

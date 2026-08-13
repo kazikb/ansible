@@ -2,3 +2,4 @@
 # vars file for host_hardening
 
 host_hardening_sshd_config_file : /etc/ssh/sshd_config.d/10-host-hardening.conf
+host_hardening_sysctl_params_file: /etc/sysctl.d/90-host-hardening.conf

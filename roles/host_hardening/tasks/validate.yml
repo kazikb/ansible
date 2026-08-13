@@ -118,3 +118,22 @@
       loop: "{{ host_hardening_sshd_listen_ports }}"
       loop_control:
         label: "SSH port: {{ item }}"
+
+- name: Validate sysctl parameter definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | trim | length > 0
+      - item.state == 'absent' or item.value is defined
+      - >-
+        host_hardening_sysctl_params_list_combined
+        | selectattr('name', 'equalto', item.name)
+        | list
+        | length == 1
+    quiet: true
+    fail_msg: >-
+      Invalid or duplicate sysctl parameter:
+      {{ item.name }}.
+      value must be defined when state is present.
+  loop: "{{ host_hardening_sysctl_params_list_combined }}"
+  loop_control:
+    label: "parameter: {{ item.name }}"
