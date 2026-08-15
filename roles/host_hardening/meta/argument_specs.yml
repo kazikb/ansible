@@ -1,10 +1,11 @@
 ---
 argument_specs:
   main:
-    short_description: Harden SSH, configure the host firewall, and manage sysctl parameters
+    short_description: Harden SSH, firewall, sysctl, and kernel modules
     description:
       - Hardens the OpenSSH server, manages the host firewall using the
-        operating system's native firewall backend, and manages sysctl parameters.
+        operating system's native firewall backend, and manages sysctl
+        parameters and kernel modules.
     options:
       host_hardening_sshd_manage:
         description: Manages the SSH daemon hardening configuration.
@@ -209,3 +210,54 @@ argument_specs:
               - absent
               - present
             required: true
+
+      host_hardening_kernel_modules_list:
+        description: A list of kernel modules managed by this role.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the kernel module name.
+            type: str
+            required: true
+          options:
+            description: Module options for enabled or configured modules.
+            type: str
+            default: ""
+          state:
+            description: Defines how the role manages the kernel module.
+            type: str
+            choices:
+              - configured
+              - disabled
+              - enabled
+            required: true
+
+      host_hardening_kernel_modules_list_append:
+        description: Additional kernel modules appended to the primary list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the kernel module name.
+            type: str
+            required: true
+          options:
+            description: Module options for enabled or configured modules.
+            type: str
+            default: ""
+          state:
+            description: Defines how the role manages the kernel module.
+            type: str
+            choices:
+              - configured
+              - disabled
+              - enabled
+            required: true
+
+      host_hardening_kernel_modules_reboot_on_change:
+        description: Reboots after kernel module configuration changes.
+        type: bool
+        default: false

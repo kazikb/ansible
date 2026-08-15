@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+
+{% for module in host_hardening_kernel_modules_list_combined %}
+{% if module.state == 'enabled' %}
+{{ module.name }}
+{% endif %}
+{% endfor %}

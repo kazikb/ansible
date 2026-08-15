@@ -3,3 +3,7 @@
 
 host_hardening_sshd_service_name: sshd
 host_hardening_firewall_firewalld_default_zone: public
+host_hardening_kernel_modules_initramfs_command:
+  - dracut
+  - --force
+  - --regenerate-all

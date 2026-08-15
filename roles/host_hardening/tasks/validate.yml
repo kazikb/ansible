@@ -137,3 +137,33 @@
   loop: "{{ host_hardening_sysctl_params_list_combined }}"
   loop_control:
     label: "parameter: {{ item.name }}"
+
+- name: Validate kernel module definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | trim | length > 0
+      - item.name is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+      - >-
+        item.state != 'configured'
+        or (item.options | default('') | trim | length > 0)
+      - >-
+        item.state != 'disabled'
+        or (item.options | default('') | trim | length == 0)
+      - >-
+        '\n' not in (item.options | default(''))
+      - >-
+        '\r' not in (item.options | default(''))
+      - >-
+        host_hardening_kernel_modules_list_combined
+        | selectattr('name', 'equalto', item.name)
+        | list
+        | length == 1
+    quiet: true
+    fail_msg: >-
+      Invalid or duplicate kernel module:
+      {{ item.name }}.
+      options must be set for configured, empty for disabled,
+      and must not contain line breaks.
+  loop: "{{ host_hardening_kernel_modules_list_combined }}"
+  loop_control:
+    label: "module: {{ item.name }}"

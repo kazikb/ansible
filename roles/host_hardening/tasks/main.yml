@@ -21,6 +21,14 @@
             + (host_hardening_sysctl_params_list_append | default([]))
           }}
 
+    - name: Combine kernel modules definitions
+      ansible.builtin.set_fact:
+        host_hardening_kernel_modules_list_combined: >-
+          {{
+            (host_hardening_kernel_modules_list | default([]))
+            + (host_hardening_kernel_modules_list_append | default([]))
+          }}
+
     - name: Gather facts on listening ports
       community.general.listen_ports_facts:
       when:
@@ -39,8 +47,11 @@
       when: host_hardening_sshd_manage | bool
 
     - name: Import firewall tasks
-      ansible.builtin.import_tasks: "firewall.yml"
+      ansible.builtin.import_tasks: firewall.yml
       when: host_hardening_firewall_manage | bool
 
     - name: Import sysctl tasks
-      ansible.builtin.import_tasks: "sysctl.yml"
+      ansible.builtin.import_tasks: sysctl.yml
+
+    - name: Import kernel modules tasks
+      ansible.builtin.import_tasks: kernel_modules.yml

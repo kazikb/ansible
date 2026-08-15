@@ -32,3 +32,7 @@
   ansible.builtin.systemd_service:
     name: firewalld.service
     state: reloaded
+
+- name: Reboot after kernel module changes
+  ansible.builtin.reboot:
+  when: host_hardening_kernel_modules_reboot_on_change | bool

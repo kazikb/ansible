@@ -79,3 +79,21 @@ host_hardening_sysctl_params_list: []
 
 # Additional sysctl parameters appended to host_hardening_sysctl_params_list
 host_hardening_sysctl_params_list_append: []
+
+# Kernel modules managed by this role
+# enabled: load now and at boot
+# configured: set options without loading
+# disabled: unload and block
+# Options are only valid with enabled and configured.
+# host_hardening_kernel_modules_list:
+#   - name: dummy
+#     options: "numdummies=1"
+#     state: enabled # configured | disabled | enabled
+host_hardening_kernel_modules_list: []
+
+# Additional kernel modules appended to host_hardening_kernel_modules_list
+host_hardening_kernel_modules_list_append: []
+
+# Reboot after the kernel module configuration changes and initramfs is rebuilt
+# [true | false]
+host_hardening_kernel_modules_reboot_on_change: false
