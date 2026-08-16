@@ -65,6 +65,8 @@ host_hardening_firewall_ingress_rules_list: []
 # Additional ingress firewall rules appended to host_hardening_firewall_ingress_rules_list
 host_hardening_firewall_ingress_rules_list_append: []
 
+# Manage sysctl parameters [true | false]
+host_hardening_sysctl_manage: false
 # Sysctl parameters managed by this role
 # Parameters omitted from this list are not changed. Use state: absent to remove
 # a parameter from the role-managed sysctl file; value is only required for
@@ -80,6 +82,8 @@ host_hardening_sysctl_params_list: []
 # Additional sysctl parameters appended to host_hardening_sysctl_params_list
 host_hardening_sysctl_params_list_append: []
 
+# Manage kernel modules [true | false]
+host_hardening_kernel_modules_manage: false
 # Kernel modules managed by this role
 # enabled: load now and at boot
 # configured: set options without loading

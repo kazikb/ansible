@@ -29,4 +29,5 @@
       awk '$1 ~ /^#/ || NF == 0 || $5 >= 3071'
       /etc/ssh/moduli > /etc/ssh/moduli.tmp
       && mv /etc/ssh/moduli.tmp /etc/ssh/moduli
+  changed_when: true
   when: host_hardening_sshd_short_moduli_result.rc == 1

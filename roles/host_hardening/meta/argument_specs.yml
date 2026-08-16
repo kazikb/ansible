@@ -167,6 +167,11 @@ argument_specs:
             type: str
             required: true
 
+      host_hardening_sysctl_manage:
+        description: Manages sysctl parameters.
+        type: bool
+        default: false
+
       host_hardening_sysctl_params_list:
         description:
           - A list of sysctl parameters managed by this role.
@@ -210,6 +215,11 @@ argument_specs:
               - absent
               - present
             required: true
+
+      host_hardening_kernel_modules_manage:
+        description: Manages kernel modules.
+        type: bool
+        default: false
 
       host_hardening_kernel_modules_list:
         description: A list of kernel modules managed by this role.

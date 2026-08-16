@@ -1,440 +1,293 @@
-linux_security
+host_hardening
 ==============
 
-This role configure basic settings related to Linux security.
-I tried to use the default tools for a given distribution (e.g. firewall configuration for Debian based systems is done using UFW and for RedHat I use firewalld).
-This approach lead to situation when configuring the same component require using different set of variable according to OS family.
+This role manages host security settings on Debian, Ubuntu and Enterprise Linux
+systems.
 
-List of components that this role configures:
-- Disable root account.
-- Add root CA certificate.
-- Configure OpenSSH server based on Mozilla recommendation [Modern (OpenSSH 6.7+)](https://infosec.mozilla.org/guidelines/openssh#modern-openssh-67).
-- Add sudo users/groups to run all commands without password (optionaly).
-- Basic firewall rules using [UFW](https://wiki.ubuntu.com/UncomplicatedFirewall) on Debian/Ubuntu OS or [firewalld](https://firewalld.org/) on RedHat OS (additionaly on RedHat 8 disable AllowZoneDrifting in firewalld configuration).
-- Managing autoupdates with [Unattended Upgrades](https://wiki.debian.org/UnattendedUpgrades) on Debian/Ubuntu OS or [DNF Automatic](https://dnf.readthedocs.io/en/latest/automatic.html) on RedHat OS.
+The role performs the following tasks:
+
+- Optionally hardens the OpenSSH server.
+- Optionally manages the native host firewall using nftables, UFW or firewalld.
+- Optionally manages sysctl parameters.
+- Optionally manages kernel module runtime and persistent state.
+- Validates managed firewall, sysctl and kernel module definitions.
+- Checks that an enabled firewall permits every listening SSH port.
+
+SSH, firewall, sysctl and kernel module management are independently opt-in.
+Disabling a management flag leaves the corresponding existing configuration
+unchanged. All tasks are tagged with `host_hardening`.
 
 Requirements
 ------------
 
-- ansible-galaxy collection install community.general
+- Ansible Core 2.21 or newer.
+- The `community.general`, `ansible.posix` and `ansible.utils` collections:
+
+```bash
+ansible-galaxy collection install -r requirements.yml
+```
+
+- Python `netaddr` 0.10.1 or newer on the Ansible controller.
+- Fact gathering must be enabled for the play.
+- The target must use systemd.
+- The play must use privilege escalation or otherwise run with root privileges.
+- OpenSSH server must be installed when SSH hardening is enabled.
+- A running SSH daemon and either `ss` or `netstat` are required when the
+  firewall is managed and enabled.
+- `update-initramfs` must be available on Debian and Ubuntu, and `dracut` on
+  Enterprise Linux, when kernel module management changes persistent state.
 
 Role Variables
 --------------
 
-### **Root CA section:**
-
-- `linux_security_root_ca_list` - List of root CA certificates to add or remove from trusted store.
-
-```
-linux_security_root_ca_list:
-  - name: Certum-CA # CA name
-    state: present # absent | present
-    content: |
-      -----BEGIN CERTIFICATE-----
-      MIIDDDCCAfSgAwIBAgIDAQAgMA0GCSqGSIb3DQEBBQUAMD4xCzAJBgNVBAYTAlBM
-      MRswGQYDVQQKExJVbml6ZXRvIFNwLiB6IG8uby4xEjAQBgNVBAMTCUNlcnR1bSBD
-      QTAeFw0wMjA2MTExMDQ2MzlaFw0yNzA2MTExMDQ2MzlaMD4xCzAJBgNVBAYTAlBM
-      MRswGQYDVQQKExJVbml6ZXRvIFNwLiB6IG8uby4xEjAQBgNVBAMTCUNlcnR1bSBD
-      QTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAM6xwS7TT3zNJc4YPk/E
-      jG+AanPIW1H4m9LcuwBcsaD8dQPugfCI7iNS6eYVM42sLQnFdvkrOYCJ5JdLkKWo
-      ePhzQ3ukYbDYWMzhbGZ+nPMJXlVjhNWo7/OxLjBos8Q82KxujZlakE403Daaj4GI
-      ULdtlkIJ89eVgw1BS7Bqa/j8D35in2fE7SZfECYPCE/wpFcozo+47UX2bu4lXapu
-      Ob7kky/ZR6By6/qmW6/KUz/iDsaWVhFu9+lmqSbYf5VT7QqFiLpPKaVCjF62/IUg
-      AKpoC6EahQGcxEZjgoi2IrHu/qpGWX7PNSzVttpd90gzFFS269lvzs2I1qsb2pY7
-      HVkCAwEAAaMTMBEwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEA
-      uI3O7+cUus/usESSbLQ5PqKEbq24IXfS1HeCh+YgQYHu4vgRt2PRFze+GXYkHAQa
-      TOs9qmdvLdTN/mUxcMUbpgIKumB7bVjCmkn+YzILa+M6wKyrO7Do0wlRjBCDxjTg
-      xSvgGrZgFCdsMneMvLJymM/NzD+5yCRCFNZX/OYmQ6kd5YCQzgNUKD73P9P4Te1q
-      CjqTE5s7FCMTY5w/0YcneeVMUeMBrYVdGjux1XMQpNPyvG5k9VpWkKjHDkx0Dy5x
-      O/fIR/RpbxXyEV6DHpx8Uq79AtoSqFlnGNu8cN2bsWntgM6JQEhqDjXKKWYVIZQs
-      6GAqm4VKQPNriiTsBhYscw==
-      -----END CERTIFICATE-----
-
-```
-
-### **OpenSSH section:**
-
-- `linux_security_sshd_allow_users` - list of allowed users to connect using ssh.
-
-```
-linux_security_sshd_allow_users:
-  - allow_demouser1
-  - allow_demouser2
-```
-
-- `linux_security_sshd_deny_users`- list of denyed users to connect using ssh.
-
-```
-linux_security_sshd_deny_users:
-  - deny_demouser1
-  - deny_demouser2
-```
-
-### **Sudo section:**
-
-- `linux_security_sudo_nopasswd_list` - list of sudo users/groups allowed to run all commands without password.
-
-```
-linux_security_sudo_nopasswd_list:
-  - name: # user name
-    state: # absent | present
-```
-
-### **UFW firewall section Debian/Ubuntu OS:**
-
-- `linux_security_ufw_default_list` - list with default settings for incoming/outgoing traffic.
-
-```
-linux_security_ufw_default_list:
-  - { direction: incoming, policy: deny }
-  - { direction: outgoing, policy: allow }
-```
-
-- `linux_security_ufw_logging` - toggles logging. Logged packets use the LOG_KERN syslog facility [on, off, low, medium, high, full]
-
-```
-linux_security_ufw_logging: 'on'
-```
-
-- `linux_security_ufw_rules_list` - list of firewall rules.
-
-```
-linux_security_ufw_rules_list:
-  - rule: allow # add firewall rule [allow, deny, limit, reject]
-    delete: 'no'  # delete rule [yes/no]
-    direction: in  # select direction for a rule [in, incoming, out, outgoing, routed]
-#    from_ip: 10.20.30.40 # source IP address
-#    from_port: 12345  # source port
-#    interface: eth0  # specify interface for the rule
-#    log: 'yes'  # log new connections matched to this rule [yes/no]
-    proto: tcp  # TCP/IP protocol [any, tcp, udp, ipv6, esp, ah, gre, igmp]
-#    to_ip: 10.2.3.4  # destination IP address
-    to_port: 22  # destination port
-    comment: 'Allow SSH'
-```
-
-### **FIREWALLD firewall section RedHat OS:**
-
-- `linux_security_firewalld_rules_list` - list of firewall rules.
-
-```
-linux_security_firewalld_rules_list:
-  - state: enabled # for service and ports [disabled, enabled] for zones [present, absent]
-    # icmp_block: # icmp types to block "firewall-cmd --get-icmptypes"
-    # icmp_block_inversion: # [Enable/Disable] inversion of ICMP blocks for a zone in firewalld
-    # immediate: # [yes/no] should this configuration be applied immediately, if set as permanent (default no)
-    # interface: # interface to add/remove to/from a zone
-    # offline: # [yes/no] whether to run this module even when firewalld is offline.
-    permanent: yes # [yes/no] should this configuration be in the running firewalld configuration or persist across reboots
-    # port: # port or port range to add/remove to/from firewalld [PORT/PROTOCOL, PORT-PORT/PROTOCOL]
-    # rich_rule: # rich rule to add/remove to/from firewalld https://firewalld.org/documentation/man-pages/firewalld.richlanguage.html
-    service: ssh # service name to add/remove "firewall-cmd --get-services"
-    # source: # source ip/network
-    # target: # firewalld Zone target [default, ACCEPT, DROP, %%REJECT%%]
-    # timeout: # the amount of time in seconds the rule should be in effect for when non-permanent
-    zone: public # firewalld zone to add/remove to/from [block, dmz, drop, external, home, internal, public, trusted, work] (default public)
-```
-
-### **Unattended Upgrades section Debian/Ubuntu OS:**
-
-- `linux_security_apt_origins_pattern_debian_list` - controls which packages are upgraded on Debian OS.
-
-```
-linux_security_apt_origins_pattern_debian_list:
-  - '"origin=Debian,codename=${distro_codename},label=Debian";'
-  - '"origin=Debian,codename=${distro_codename},label=Debian-Security";'
-```
-
-- `linux_security_apt_allowed_origins_ubuntu_list` - controls which packages are upgraded on Ubuntu OS.
-
-```
-linux_security_apt_allowed_origins_ubuntu_list:
-  - '"${distro_id}:${distro_codename}";'
-  - '"${distro_id}:${distro_codename}-security";'
-```
-
-- `linux_security_apt_allowed_origins_esm_ubuntu_list` - controls which packages are upgraded on Ubuntu OS with Extended Security Maintenance.
-
-```
-linux_security_apt_allowed_origins_esm_ubuntu_list:
-  - '"${distro_id}ESMApps:${distro_codename}-apps-security";'
-  - '"${distro_id}ESM:${distro_codename}-infra-security";'
-```
-
-- `linux_security_apt_package_black_list` - list of regular expressions, matching packages to exclude from upgrading.
-
-```
-linux_security_apt_package_black_list:
-  - libc6$
-  - libc6-dev$
-  - libstdc\+\+6$
-```
-
-- `linux_security_apt_notification_email` - notification email address (default no notification) require maile setup.
-
-```
-linux_security_apt_notification_email: alerts@example.com
-```
-
-- `linux_security_apt_mail_only_on_error_debian` - [true/false] [string] send emails only on errors (default false).
-
-```
-linux_security_apt_mail_only_on_error_debian: "true"
-```
-
-- `linux_security_apt_mail_only_on_error_ubuntu` - ["always", "only-on-error", "on-change"] when send emails (default on-change).
-
-```
-linux_security_apt_mail_only_on_error_ubuntu: always
-```
-
-- `linux_security_apt_remove_unused_kernel_packages` - [true/false] [string] remove unused automatically installed kernel-related packages (default true).
-
-```
-linux_security_apt_remove_unused_kernel_packages: "true"
-```
-
-- `linux_security_apt_remove_new_unused_dependencies` - [true/false] [string] automatic removal of newly unused dependencies after the upgrade (default true).
-
-```
-linux_security_apt_remove_new_unused_dependencies: "true"
-```
-
-- `linux_security_apt_remove_unused_dependencies` - [true/false] [string] automatic removal of unused packages after the upgrade (default false).
-
-```
-linux_security_apt_remove_unused_dependencies: "true"
-```
-
-- `linux_security_apt_automatic_reboot` - [true/false] [string] automatically reboot (default true).
-
-```
-linux_security_apt_automatic_reboot: "true"
-```
-
-- `linux_security_apt_automatic_reboot_with_users` - [true/false] [string] automatically reboot even if there are users currently logged in (default true).
-
-```
-linux_security_apt_automatic_reboot_with_users: "true"
-```
-
-- `linux_security_apt_automatic_reboot_time`- reboot time after installing updates.
-
-```
-linux_security_apt_automatic_reboot_time: "04:00"
-```
-
-- `linux_security_apt_dl_limit` - apt bandwidth limit kb/sec (default 70kb/sec).
-
-```
-linux_security_apt_dl_limit: 140
-```
-
-- `linux_security_apt_syslog_enable` - [true/false] [string] enable logging to syslog (default false).
-
-```
-linux_security_apt_syslog_enable: "false"
-```
-
-- `linux_security_apt_syslog_facility` - syslog facility (default daemon).
-
-```
-linux_security_apt_syslog_facility: daemon
-```
-
-- `linux_security_apt_allow_downgrade_ubuntu` - [true/false] [string] allow package downgrade if Pin-Priority exceeds 1000 (default false).
-
-```
-linux_security_apt_allow_downgrade_ubuntu: "false"
-```
-
-- `linux_security_apt_download_time` - systemd timer override default download time.
-
-```
-linux_security_apt_download_time: "5,20:00"
-```
-
-- `linux_security_apt_download_randomized_delay_sec` - systemd timer override default randomized deley.
-
-```
-linux_security_apt_download_randomized_delay_sec: "2h"
-```
-
-- `linux_security_apt_upgrade_time` - systemd timer override default upgrade time.
-
-```
-linux_security_apt_upgrade_time: "2:00"
-```
-
-- `linux_security_apt_upgrade_randomized_delay_sec` - systemd timer override default upgrade deley.
-
-```
-linux_security_apt_upgrade_randomized_delay_sec: "60m"
-```
-
-### **DNF-automatic section RedHat OS:**
-
-- `linux_security_dnf_automatic_upgrade_type` - [default, security] what kind of upgrade to perform.
-
-```
-linux_security_dnf_automatic_upgrade_type: default
-```
-
-- `linux_security_dnf_automatic_random_sleep` - random sleep in seconds.
-
-```
-linux_security_dnf_automatic_random_sleep: 120
-```
-
-- `linux_security_dnf_automatic_network_online_timeout` - maximum time in seconds to wait until the system is on-line and able to connect to remote repositories.
-
-```
-linux_security_dnf_automatic_network_online_timeout: 120
-```
-
-- `linux_security_dnf_automatic_download_updates` - [yes/no] [string] whether updates should be downloaded when they are available.
-
-```
-linux_security_dnf_automatic_download_updates: 'yes'
-```
-
-- `linux_security_dnf_automatic_apply_updates` - [yes/no] [string] whether updates should be applied when they are available.
-
-```
-linux_security_dnf_automatic_apply_updates: 'yes'
-```
-
-- `linux_security_dnf_automatic_emit_via` - [stdio, email, motd] how to send messages.
-
-```
-linux_security_dnf_automatic_emit_via: email
-```
-
-- `linux_security_dnf_automatic_system_name` - name to use for this system in messages that are emitted (default hostname).
-
-```
-linux_security_dnf_automatic_system_name: demohost
-```
-
-- `linux_security_dnf_automatic_email_from` - the address to send email messages from (default using {{ ansible_hostname }}@{{ linux_common_mta_sender_domain }} from role linux_common).
-
-```
-linux_security_dnf_automatic_email_from: demohost@example.com
-```
-
-- `linux_security_dnf_automatic_email_to_list` - list of addresses to send messages to (default using linux_common_mta_root_notification_email from role linux_common if defined).
-
-```
-linux_security_dnf_automatic_email_to_list:
-  - alerts@example.com
-  - admins@example.com
-```
-
-- `linux_security_dnf_automatic_email_host` - name of the host to connect to send email messages (default using linux_common_mta_smtp_relayhost from role linux_common).
-
-```
-linux_security_dnf_automatic_email_host: smtp.example.com
-```
-
-- `linux_security_dnf_automatic_install_time` - systemd timer override default autoupdate time.
-
-```
-linux_security_dnf_automatic_install_time: "2:00"
-```
-
-- `linux_security_dnf_automatic_install_randomized_delay_sec` - systemd timer override default autoupdate deley.
-
-```
-linux_security_dnf_automatic_install_randomized_delay_sec: "60m"
-```
+### OpenSSH hardening
+
+- `host_hardening_sshd_manage` - manage the SSH hardening configuration.
+  Default: `false`.
+- `host_hardening_sshd_permit_root_login` - root login policy:
+  `forced-commands-only`, `no` or `prohibit-password`. Default: `no`.
+- `host_hardening_sshd_max_auth_tries` - maximum authentication attempts per
+  connection. Default: `3`.
+- `host_hardening_sshd_login_grace_time` - time allowed to authenticate.
+  Default: `1m`.
+- `host_hardening_sshd_jump_host` - allow local TCP forwarding for
+  `ProxyJump` or `ssh -J`. Default: `false`.
+- `host_hardening_sshd_algorithm_policy` - `distribution`, `remove` or
+  `replace`. Default: `distribution`.
+- `host_hardening_sshd_kex_algorithms` - SSH key-exchange algorithms. Default:
+  `[]`.
+- `host_hardening_sshd_ciphers` - SSH encryption algorithms. Default: `[]`.
+- `host_hardening_sshd_macs` - SSH message authentication algorithms. Default:
+  `[]`.
+- `host_hardening_sshd_host_key_algorithms` - server host-key signature
+  algorithms. Default: `[]`.
+- `host_hardening_sshd_pubkey_accepted_algorithms` - accepted user public-key
+  signature algorithms. Default: `[]`.
+
+```yaml
+host_hardening_sshd_manage: true
+host_hardening_sshd_permit_root_login: "no"
+host_hardening_sshd_max_auth_tries: 3
+host_hardening_sshd_login_grace_time: 1m
+host_hardening_sshd_jump_host: false
+
+host_hardening_sshd_algorithm_policy: remove
+host_hardening_sshd_kex_algorithms:
+  - diffie-hellman-group14-sha1
+host_hardening_sshd_ciphers:
+  - aes128-cbc
+host_hardening_sshd_macs:
+  - hmac-sha1
+```
+
+When enabled, the role writes
+`/etc/ssh/sshd_config.d/10-host-hardening.conf`. It requires public-key
+authentication, disables password authentication and most forwarding features,
+and validates the SSH configuration before reloading the service. Enabling jump
+host support permits local TCP forwarding only.
+
+The `distribution` algorithm policy leaves distribution defaults unchanged.
+The `remove` policy removes listed algorithms from those defaults, while
+`replace` replaces a default with each corresponding non-empty list. Empty
+lists do not generate directives.
+
+The role also removes active Diffie-Hellman moduli shorter than 3071 bits from
+`/etc/ssh/moduli`.
+
+### Host firewall
+
+- `host_hardening_firewall_manage` - manage the host firewall. Default:
+  `false`.
+- `host_hardening_firewall_enabled` - enable and start the firewall service.
+  Default: `true`.
+- `host_hardening_firewall_logging` - log denied incoming traffic. Default:
+  `false`.
+- `host_hardening_firewall_default_incoming_policy` - `drop` or `reject`
+  unmatched incoming traffic. Default: `drop`.
+- `host_hardening_firewall_ingress_rules_list` - managed ingress rules.
+  Default: `[]`.
+- `host_hardening_firewall_ingress_rules_list_append` - additional ingress
+  rules appended to the primary list. Default: `[]`.
+
+Each firewall rule requires:
+
+- `name` - unique rule name.
+- `state` - `present` or `absent`.
+- `protocol` - `tcp` or `udp`.
+- `destination_port` - a port from 1 through 65535 or an inclusive range using
+  `start-end` syntax.
+- `source` - `any`, an IP address or a CIDR network.
+
+```yaml
+host_hardening_firewall_manage: true
+host_hardening_firewall_enabled: true
+host_hardening_firewall_logging: true
+host_hardening_firewall_default_incoming_policy: drop
+
+host_hardening_firewall_ingress_rules_list:
+  - name: ssh-access
+    state: present
+    protocol: tcp
+    destination_port: "22"
+    source: any
+
+  - name: https-access
+    state: present
+    protocol: tcp
+    destination_port: "443"
+    source: 192.0.2.0/24
+```
+
+Rule names and source, protocol and port combinations must be unique across the
+primary and append lists.
+
+When firewall management is enabled, the role validates all rule definitions.
+When the firewall is also enabled, the role discovers listening `sshd` ports
+and requires each port to be covered by a `present` TCP rule. This check does
+not verify that the rule source permits the Ansible controller.
+
+The firewall backend depends on the target:
+
+- Debian uses nftables. The role replaces `/etc/nftables.conf` with its managed
+  configuration. Disabling nftables stops the service and flushes the complete
+  active nftables ruleset.
+- Ubuntu uses UFW. The role enables IPv6 and manages incoming rules, default
+  policies and logging.
+- Enterprise Linux uses firewalld and the `public` zone. The role removes the
+  `cockpit`, `dhcpv6-client` and `ssh` services from that zone and manages its
+  target, rules and logging.
+
+On Debian, the rendered nftables configuration is authoritative. On Ubuntu and
+Enterprise Linux, include a previously managed rule with `state: absent` to
+remove it. Omitting the rule does not remove it.
+
+Setting `host_hardening_firewall_manage` to `false` leaves the firewall
+unchanged. Setting `host_hardening_firewall_enabled` to `false` while management
+remains enabled installs the native backend if needed and disables it.
+
+### Sysctl parameters
+
+- `host_hardening_sysctl_manage` - manage sysctl parameters. Default: `false`.
+- `host_hardening_sysctl_params_list` - managed sysctl parameters. Default:
+  `[]`.
+- `host_hardening_sysctl_params_list_append` - additional parameters appended
+  to the primary list. Default: `[]`.
+
+Each definition requires a unique `name` and a `state` of `present` or
+`absent`. A string `value` is required when `state` is `present`.
+
+```yaml
+host_hardening_sysctl_manage: true
+host_hardening_sysctl_params_list:
+  - name: kernel.randomize_va_space
+    value: "2"
+    state: present
+  - name: kernel.panic
+    state: absent
+```
+
+The role manages `/etc/sysctl.d/90-host-hardening.conf` and applies present
+values to the running kernel. Omitted parameters are not changed. Use
+`state: absent` to remove a previously managed parameter from the file.
+
+Setting `host_hardening_sysctl_manage` to `false` leaves persistent and runtime
+values unchanged.
+
+### Kernel modules
+
+- `host_hardening_kernel_modules_manage` - manage kernel modules. Default:
+  `false`.
+- `host_hardening_kernel_modules_list` - managed kernel modules. Default: `[]`.
+- `host_hardening_kernel_modules_list_append` - additional modules appended to
+  the primary list. Default: `[]`.
+- `host_hardening_kernel_modules_reboot_on_change` - reboot after persistent
+  module configuration changes. Default: `false`.
+
+Each definition requires a unique `name` and one of these states:
+
+- `enabled` - load the module now and at boot. Optional `options` are written to
+  the role-managed modprobe file.
+- `configured` - write required module `options` without changing runtime state.
+- `disabled` - unload and block the module. `options` must be empty.
+
+```yaml
+host_hardening_kernel_modules_manage: true
+host_hardening_kernel_modules_list:
+  - name: dummy
+    options: numdummies=1
+    state: enabled
+  - name: cramfs
+    state: disabled
+
+host_hardening_kernel_modules_reboot_on_change: false
+```
+
+The role owns `/etc/modules-load.d/host-hardening.conf` and
+`/etc/modprobe.d/host-hardening.conf`. It removes either file when the combined
+module list no longer requires it. Persistent changes rebuild all initramfs
+images and optionally reboot the target. Runtime-only changes do not trigger a
+reboot.
+
+Setting `host_hardening_kernel_modules_manage` to `false` leaves persistent and
+runtime state unchanged.
 
 Dependencies
 ------------
 
-Role linux_common should be run before if you want to use email notification for autoupdate.
+This role has no Ansible role dependencies. It uses the `community.general`,
+`ansible.posix` and `ansible.utils` collections listed in `requirements.yml`.
 
 Example Playbook
 ----------------
 
-This example playbook uses my other role `linux_common` (which is also in this repository) and `linux_security`.
-
-```
-- name: Example
+```yaml
+---
+- name: Apply host hardening
   hosts: servers
   become: true
   gather_facts: true
 
   vars:
-    # Role linux_common
-    linux_common_domain_name: example.local
-    linux_common_mta_enabled: yes
-    linux_common_mta_root_notification_email: alerts@example.local
-    linux_common_mta_smtp_relayhost: smtp.example.local
-    linux_common_mta_sender_domain: example.local
-    # Role linux_security:
-    linux_security_root_ca_list:
-      - name: Certum-CA
+    host_hardening_sshd_manage: true
+    host_hardening_sshd_permit_root_login: "no"
+
+    host_hardening_firewall_manage: true
+    host_hardening_firewall_enabled: true
+    host_hardening_firewall_ingress_rules_list:
+      - name: ssh-access
         state: present
-        content: |
-          -----BEGIN CERTIFICATE-----
-          MIIDDDCCAfSgAwIBAgIDAQAgMA0GCSqGSIb3DQEBBQUAMD4xCzAJBgNVBAYTAlBM
-          MRswGQYDVQQKExJVbml6ZXRvIFNwLiB6IG8uby4xEjAQBgNVBAMTCUNlcnR1bSBD
-          QTAeFw0wMjA2MTExMDQ2MzlaFw0yNzA2MTExMDQ2MzlaMD4xCzAJBgNVBAYTAlBM
-          MRswGQYDVQQKExJVbml6ZXRvIFNwLiB6IG8uby4xEjAQBgNVBAMTCUNlcnR1bSBD
-          QTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAM6xwS7TT3zNJc4YPk/E
-          jG+AanPIW1H4m9LcuwBcsaD8dQPugfCI7iNS6eYVM42sLQnFdvkrOYCJ5JdLkKWo
-          ePhzQ3ukYbDYWMzhbGZ+nPMJXlVjhNWo7/OxLjBos8Q82KxujZlakE403Daaj4GI
-          ULdtlkIJ89eVgw1BS7Bqa/j8D35in2fE7SZfECYPCE/wpFcozo+47UX2bu4lXapu
-          Ob7kky/ZR6By6/qmW6/KUz/iDsaWVhFu9+lmqSbYf5VT7QqFiLpPKaVCjF62/IUg
-          AKpoC6EahQGcxEZjgoi2IrHu/qpGWX7PNSzVttpd90gzFFS269lvzs2I1qsb2pY7
-          HVkCAwEAAaMTMBEwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEA
-          uI3O7+cUus/usESSbLQ5PqKEbq24IXfS1HeCh+YgQYHu4vgRt2PRFze+GXYkHAQa
-          TOs9qmdvLdTN/mUxcMUbpgIKumB7bVjCmkn+YzILa+M6wKyrO7Do0wlRjBCDxjTg
-          xSvgGrZgFCdsMneMvLJymM/NzD+5yCRCFNZX/OYmQ6kd5YCQzgNUKD73P9P4Te1q
-          CjqTE5s7FCMTY5w/0YcneeVMUeMBrYVdGjux1XMQpNPyvG5k9VpWkKjHDkx0Dy5x
-          O/fIR/RpbxXyEV6DHpx8Uq79AtoSqFlnGNu8cN2bsWntgM6JQEhqDjXKKWYVIZQs
-          6GAqm4VKQPNriiTsBhYscw==
-          -----END CERTIFICATE-----
-    linux_security_enable_autoupdates: yes
-    linux_security_apt_notification_email: demotest@example.local
-    linux_security_dnf_automatic_email_to_list:
-      - alerts@example.com
-      - admins@example.com
-    linux_security_ufw_rules_list:
-      - rule: allow
-        delete: 'no'
-        direction: in
-        proto: tcp
-        to_port: 22
-        comment: 'Demo SSH'
-      - rule: allow
-        delete: 'no'
-        direction: in
-        from_ip: 10.10.100.10
-        proto: tcp
-        to_port: 443
-        comment: 'Demo HTTPS'
-    linux_security_firewalld_rules_list:
-      - state: enabled
-        immediate: yes
-        permanent: yes
-        service: ssh
-        zone: public
-      - state: enabled
-        immediate: yes
-        permanent: yes
-        rich_rule: rule family="ipv4" source address="10.10.100.23" port port="443" protocol="tcp" accept
-        zone: public
+        protocol: tcp
+        destination_port: "22"
+        source: any
+
+    host_hardening_sysctl_manage: true
+    host_hardening_sysctl_params_list:
+      - name: kernel.randomize_va_space
+        value: "2"
+        state: present
+
+    host_hardening_kernel_modules_manage: true
+    host_hardening_kernel_modules_list:
+      - name: cramfs
+        state: disabled
 
   roles:
-    - linux_common
-    - linux_security
+    - role: host_hardening
+```
+
+The SSH rule must cover the target's actual listening SSH port before enabling
+firewall management.
+
+Run only this role's tagged tasks with:
+
+```bash
+ansible-playbook site.yml --tags host_hardening
 ```
 
 License
 -------
 
-MIT / BSD
+MIT
 
 Author Information
 ------------------

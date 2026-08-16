@@ -52,6 +52,8 @@
 
     - name: Import sysctl tasks
       ansible.builtin.import_tasks: sysctl.yml
+      when: host_hardening_sysctl_manage | bool
 
     - name: Import kernel modules tasks
       ansible.builtin.import_tasks: kernel_modules.yml
+      when: host_hardening_kernel_modules_manage | bool
