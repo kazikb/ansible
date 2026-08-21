@@ -128,7 +128,7 @@ argument_specs:
       system_baseline_automatic_updates_automatic_reboot:
         description: Reboots automatically when required after updates.
         type: bool
-        default: true
+        default: false
 
       system_baseline_automatic_updates_upgrade_time:
         description: Sets the daily automatic-update systemd calendar time.

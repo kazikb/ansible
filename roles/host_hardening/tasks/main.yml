@@ -35,7 +35,7 @@
         - host_hardening_firewall_manage | bool
         - host_hardening_firewall_enabled | bool
 
-    - name: Validate system baseline configuration
+    - name: Validate host hardening configuration
       ansible.builtin.import_tasks: validate.yml
 
     - name: Include OS-specific variables

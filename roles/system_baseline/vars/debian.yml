@@ -11,6 +11,7 @@ system_baseline_chrony_config_file: /etc/chrony/chrony.conf
 
 # Distribution specific packages to install
 system_baseline_distribution_package_list:
+  - bind9-dnsutils
   - netcat-openbsd
   - iproute2
 

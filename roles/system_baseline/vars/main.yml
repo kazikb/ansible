@@ -13,7 +13,6 @@ system_baseline_package_list:
   - rsync
   - tmux
   - screen
-  - dnsutils
   - tcpdump
   - traceroute
   - mtr
