@@ -13,7 +13,9 @@ argument_specs:
         default: false
 
       access_management_sshd_access_group:
-        description: Specifies the group whose members are allowed to connect through SSH.
+        description:
+          - Specifies the group whose members are allowed to connect through SSH.
+          - Cannot be sudo or wheel.
         type: str
         default: sshusers
 
@@ -169,7 +171,8 @@ argument_specs:
             type: str
           groups:
             description:
-              - A list of existing supplementary groups for the account.
+              - A list of supplementary groups for the account.
+              - Each group must exist when the account is managed.
               - Reserved sudo and SSH access groups must use the dedicated options.
             type: list
             elements: str
@@ -273,7 +276,8 @@ argument_specs:
             type: str
           groups:
             description:
-              - A list of existing supplementary groups for the account.
+              - A list of supplementary groups for the account.
+              - Each group must exist when the account is managed.
               - Reserved sudo and SSH access groups must use the dedicated options.
             type: list
             elements: str

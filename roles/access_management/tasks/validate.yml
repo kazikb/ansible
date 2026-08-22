@@ -1,4 +1,13 @@
 ---
+- name: Validate SSH access group ownership
+  ansible.builtin.assert:
+    that:
+      - access_management_sshd_access_group not in ['sudo', 'wheel']
+    quiet: true
+    fail_msg: >-
+      access_management_sshd_access_group cannot be sudo or wheel because
+      the role creates and removes the configured SSH access group.
+
 - name: Validate group definitions
   ansible.builtin.assert:
     that:
@@ -34,6 +43,25 @@
     fail_msg: >-
       access_management_groups_list and
       access_management_groups_list_append contain duplicate group names.
+
+- name: Validate reserved group ownership
+  ansible.builtin.assert:
+    that:
+      - >-
+        access_management_groups_list_combined
+        | map(attribute='name')
+        | intersect(access_management_reserved_groups)
+        | length == 0
+    quiet: true
+    fail_msg: >-
+      The sudo, wheel, and configured SSH access groups are reserved and cannot
+      be managed through access_management_groups_list or
+      access_management_groups_list_append.
+  vars:
+    access_management_reserved_groups:
+      - sudo
+      - wheel
+      - "{{ access_management_sshd_access_group }}"
 
 - name: Validate user definitions
   ansible.builtin.assert:

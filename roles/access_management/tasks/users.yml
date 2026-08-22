@@ -1,8 +1,4 @@
 ---
-- name: Gather existing group information
-  ansible.builtin.getent:
-    database: group
-
 - name: Initialize prepared user list
   ansible.builtin.set_fact:
     access_management_users_list_prepared: []
@@ -25,8 +21,6 @@
         (
           (
             item.groups | default([])
-            | select('in', ansible_facts.getent_group.keys() | list)
-            | list
           )
           +
           (

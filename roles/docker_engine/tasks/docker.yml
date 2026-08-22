@@ -32,7 +32,7 @@
     - name: Force update APT cache after adding Docker Engine repository
       ansible.builtin.apt:
         update_cache: true
-      when: docker_engine_apt_repository_state.changed
+      when: docker_engine_apt_repository_state.changed # noqa: no-handler
 
     - name: Install docker-ce on Debian and Ubuntu
       ansible.builtin.apt:

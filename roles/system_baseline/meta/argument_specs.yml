@@ -133,7 +133,7 @@ argument_specs:
       system_baseline_automatic_updates_upgrade_time:
         description: Sets the daily automatic-update systemd calendar time.
         type: str
-        default: "2:00"
+        default: "02:00"
 
       system_baseline_automatic_updates_upgrade_randomized_delay_sec:
         description: Sets the randomized delay for the automatic-update timer.
@@ -152,7 +152,7 @@ argument_specs:
       system_baseline_automatic_updates_apt_download_time:
         description: Sets the daily APT package-list download systemd calendar times.
         type: str
-        default: "5,22:00"
+        default: "05,22:00"
 
       system_baseline_automatic_updates_apt_download_randomized_delay_sec:
         description: Sets the randomized delay for the APT download timer.

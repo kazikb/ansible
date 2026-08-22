@@ -47,7 +47,7 @@ Role Variables
 - `access_management_sshd_manage_access` - restrict SSH access to members of the
   configured access group. Default: `false`.
 - `access_management_sshd_access_group` - group whose members are allowed to
-  connect through SSH. Default: `sshusers`.
+  connect through SSH. Cannot be `sudo` or `wheel`. Default: `sshusers`.
 
 ```yaml
 access_management_sshd_manage_access: true
@@ -150,7 +150,8 @@ validated with `visudo` before installation. Each rule is rendered after the
 the host specification.
 
 Group names must be unique across `access_management_groups_list` and
-`access_management_groups_list_append`.
+`access_management_groups_list_append`. The `sudo`, `wheel` and configured SSH
+access groups are reserved and cannot be managed through these lists.
 
 ### Local users
 
@@ -173,7 +174,7 @@ Each user definition supports:
 - `move_home` - move the existing home directory when its path changes. Default:
   `false`.
 - `group` - primary group.
-- `groups` - existing supplementary groups. Default: `[]`.
+- `groups` - supplementary groups to assign. Default: `[]`.
 - `umask` - account umask.
 - `system` - create a system account. Default: `false`.
 - `remove` - remove the home directory and mail spool with an absent account.
@@ -222,10 +223,11 @@ access_management_users_list:
 ```
 
 Supplementary membership is authoritative: managed users are removed from
-groups that are not included in the computed group list. Only groups that
-already exist on the target are applied. The `sudo`, `wheel` and configured SSH
-access groups must be managed through the `sudo` and `ssh_access` options rather
-than listed in `groups`.
+groups that are not included in the computed group list. Groups managed with
+`state: present` are created before users; other requested groups must already
+exist. A missing group causes the role to fail. The `sudo`, `wheel` and
+configured SSH access groups must be managed through the `sudo` and `ssh_access`
+options rather than listed in `groups`.
 
 Each authorized-key definition requires:
 

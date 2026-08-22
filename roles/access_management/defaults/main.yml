@@ -82,7 +82,7 @@ access_management_groups_list_append: []
 #     comment: Normal User # User account description
 #     shell: /bin/bash # Login shell
 #     create_home: true # Create the home directory [true | false]
-#     groups: # Supplementary groups that exist on the host
+#     groups: # Existing or role-managed supplementary groups
 #       - developers
 #     ssh_authorized_keys: # SSH public keys to manage
 #       - pubkey: "ssh-ed25519 AAAA... normal_user"
