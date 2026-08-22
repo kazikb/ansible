@@ -36,6 +36,14 @@ argument_specs:
         type: str
         default: local
 
+      docker_engine_daemon_log_format:
+        description: Sets the output format for Docker daemon logs.
+        type: str
+        choices:
+          - json
+          - text
+        default: text
+
       docker_engine_daemon_log_options:
         description:
           - Defines options passed to the default container logging driver.

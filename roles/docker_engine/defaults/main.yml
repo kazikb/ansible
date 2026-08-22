@@ -17,6 +17,10 @@ docker_engine_daemon_default_address_pool_list: []
 # Default logging driver for newly created containers.
 docker_engine_daemon_log_driver: local
 
+# Docker daemon log output format
+# [text | json]
+docker_engine_daemon_log_format: text
+
 # Options for the default container logging driver.
 # Values must be strings as required by Docker.
 docker_engine_daemon_log_options:
