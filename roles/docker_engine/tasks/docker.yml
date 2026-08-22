@@ -1,0 +1,78 @@
+---
+
+- name: Install Docker Engine on Debian and Ubuntu
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    - name: Remove conflicting packages on Debian and Ubuntu
+      ansible.builtin.apt:
+        name: "{{ docker_engine_conflicting_package_list }}"
+        state: absent
+        purge: true
+        update_cache: true
+        cache_valid_time: "{{ docker_engine_apt_cache_valid_time }}"
+
+    - name: Get package architecture on Debian and Ubuntu
+      ansible.builtin.command:
+        cmd: dpkg --print-architecture
+      register: docker_engine_dpkg_architecture
+      changed_when: false
+
+    - name: Add Docker Engine repository on Debian and Ubuntu
+      ansible.builtin.deb822_repository:
+        name: docker
+        types: deb
+        uris: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}"
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: stable
+        architectures: "{{ docker_engine_dpkg_architecture.stdout }}"
+        signed_by: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg"
+        enabled: true
+      register: docker_engine_apt_repository_state
+
+    - name: Force update APT cache after adding Docker Engine repository
+      ansible.builtin.apt:
+        update_cache: true
+      when: docker_engine_apt_repository_state.changed
+
+    - name: Install docker-ce on Debian and Ubuntu
+      ansible.builtin.apt:
+        name: "{{ docker_engine_package_list }}"
+        state: present
+        update_cache: true
+        cache_valid_time: "{{ docker_engine_apt_cache_valid_time }}"
+
+- name: Install Docker Engine on RedHat systems
+  when: ansible_facts['os_family'] == 'RedHat'
+  block:
+    - name: Remove conflicting packages on RedHat systems
+      ansible.builtin.dnf:
+        name: "{{ docker_engine_conflicting_package_list }}"
+        state: absent
+        autoremove: true
+
+    - name: Add Docker Engine repository on RedHat systems
+      ansible.builtin.command:
+        cmd: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install docker-ce on RedHat systems
+      ansible.builtin.dnf:
+        name: "{{ docker_engine_package_list }}"
+        state: present
+        update_cache: true
+
+- name: Enable and start Docker Engine service
+  ansible.builtin.systemd_service:
+    name: docker.service
+    state: started
+    enabled: true
+
+- name: Update docker daemon config file
+  ansible.builtin.template:
+    src: docker-daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+    validate: '/usr/bin/dockerd --validate --config-file=%s'
+  notify: Restart Docker
