@@ -1,0 +1,18 @@
+---
+# handlers file for access_management
+
+# Keep these handler names and their order aligned with other roles
+# that manage SSH daemon configuration. Identical names ensure that
+# SSH validation and reload run only once per handler flush.
+# Roles using this handlers:
+# - access_management
+# - host_hardening
+- name: Validate SSH daemon configuration
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: Reload SSH service
+  ansible.builtin.systemd_service:
+    name: "{{ access_management_sshd_service_name }}"
+    state: reloaded

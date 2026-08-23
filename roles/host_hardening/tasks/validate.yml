@@ -1,0 +1,172 @@
+---
+- name: Validate firewall section
+  when: host_hardening_firewall_manage | bool
+  block:
+    - name: Initialize normalized firewall ingress rules
+      ansible.builtin.set_fact:
+        host_hardening_firewall_ingress_rules_list_normalized: []
+
+    - name: Normalize firewall ingress rule port ranges
+      ansible.builtin.set_fact:
+        host_hardening_firewall_ingress_rules_list_normalized: >-
+          {{
+            host_hardening_firewall_ingress_rules_list_normalized
+            + [
+                item
+                | combine(
+                    {
+                      'destination_port_start':
+                        (
+                          (item.destination_port | string).split('-')
+                          | first
+                          | int
+                        ),
+                      'destination_port_end':
+                        (
+                          (item.destination_port | string).split('-')
+                          | last
+                          | int
+                        )
+                    }
+                  )
+              ]
+          }}
+      loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+      loop_control:
+        label: "rule: {{ item.name }}"
+
+    - name: Validate firewall ingress rule definitions
+      ansible.builtin.assert:
+        that:
+          - item.name | trim | length > 0
+          - item.name is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+          - >-
+            (item.destination_port | string)
+            is match('^[1-9][0-9]{0,4}(?:-[1-9][0-9]{0,4})?$')
+          - item.destination_port_start >= 1
+          - item.destination_port_end <= 65535
+          - item.destination_port_start <= item.destination_port_end
+          - >-
+            item.source == 'any'
+            or (item.source | ansible.utils.ipv4) is not false
+            or (item.source | ansible.utils.ipv6) is not false
+          - >-
+            host_hardening_firewall_ingress_rules_list_normalized
+            | selectattr('name', 'equalto', item.name)
+            | list
+            | length == 1
+          - >-
+            host_hardening_firewall_ingress_rules_list_normalized
+            | selectattr('source', 'equalto', item.source)
+            | selectattr('protocol', 'equalto', item.protocol)
+            | selectattr(
+                'destination_port_start',
+                'equalto',
+                item.destination_port_start
+              )
+            | selectattr(
+                'destination_port_end',
+                'equalto',
+                item.destination_port_end
+              )
+            | list
+            | length == 1
+        quiet: true
+        fail_msg: >-
+          Invalid or duplicate firewall ingress rule:
+          {{ item.name }}.
+          destination_port must use "22" or "10000-10100" syntax.
+      loop: "{{ host_hardening_firewall_ingress_rules_list_normalized }}"
+      loop_control:
+        label: "rule: {{ item.name }}"
+
+    - name: Validate SSH firewall access
+      when: host_hardening_firewall_enabled | bool
+      vars:
+        host_hardening_sshd_listen_ports: >-
+          {{
+            ansible_facts.tcp_listen
+            | selectattr('name', 'defined')
+            | selectattr('name', 'equalto', 'sshd')
+            | map(attribute='port')
+            | map('int')
+            | unique
+            | sort
+            | list
+          }}
+      block:
+        - name: Validate SSH listener discovery
+          ansible.builtin.assert:
+            that:
+              - host_hardening_sshd_listen_ports | length > 0
+            quiet: true
+            fail_msg: No listening SSH ports were discovered.
+
+        - name: Validate firewall access to SSH ports
+          ansible.builtin.assert:
+            that:
+              - >-
+                host_hardening_firewall_ingress_rules_list_normalized
+                | selectattr('state', 'equalto', 'present')
+                | selectattr('protocol', 'equalto', 'tcp')
+                | selectattr('destination_port_start', 'le', item)
+                | selectattr('destination_port_end', 'ge', item)
+                | list
+                | length > 0
+            quiet: true
+            fail_msg: >-
+              The firewall ingress rules does not permit SSH port {{ item }}.
+          loop: "{{ host_hardening_sshd_listen_ports }}"
+          loop_control:
+            label: "SSH port: {{ item }}"
+
+- name: Validate sysctl parameter definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | trim | length > 0
+      - item.state == 'absent' or item.value is defined
+      - >-
+        host_hardening_sysctl_params_list_combined
+        | selectattr('name', 'equalto', item.name)
+        | list
+        | length == 1
+    quiet: true
+    fail_msg: >-
+      Invalid or duplicate sysctl parameter:
+      {{ item.name }}.
+      value must be defined when state is present.
+  loop: "{{ host_hardening_sysctl_params_list_combined }}"
+  when: host_hardening_sysctl_manage | bool
+  loop_control:
+    label: "parameter: {{ item.name }}"
+
+- name: Validate kernel module definitions
+  ansible.builtin.assert:
+    that:
+      - item.name | trim | length > 0
+      - item.name is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+      - >-
+        item.state != 'configured'
+        or (item.options | default('') | trim | length > 0)
+      - >-
+        item.state != 'disabled'
+        or (item.options | default('') | trim | length == 0)
+      - >-
+        '\n' not in (item.options | default(''))
+      - >-
+        '\r' not in (item.options | default(''))
+      - >-
+        host_hardening_kernel_modules_list_combined
+        | selectattr('name', 'equalto', item.name)
+        | list
+        | length == 1
+    quiet: true
+    fail_msg: >-
+      Invalid or duplicate kernel module:
+      {{ item.name }}.
+      options must be set for configured, empty for disabled,
+      and must not contain line breaks.
+  loop: "{{ host_hardening_kernel_modules_list_combined }}"
+  when: host_hardening_kernel_modules_manage | bool
+  loop_control:
+    label: "module: {{ item.name }}"

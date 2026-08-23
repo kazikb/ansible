@@ -1,0 +1,38 @@
+---
+- name: Enable SSH access management
+  when: access_management_sshd_manage_access | bool
+  block:
+    - name: Create SSH access group
+      ansible.builtin.group:
+        name: "{{ access_management_sshd_access_group }}"
+        state: present
+        system: true
+
+    - name: Configure SSH access control
+      ansible.builtin.copy:
+        content: |
+          # Ansible managed
+          AllowGroups {{ access_management_sshd_access_group }}
+        dest: "{{ access_management_sshd_access_config_file }}"
+        owner: root
+        group: root
+        mode: "0600"
+      notify:
+        - Validate SSH daemon configuration
+        - Reload SSH service
+
+- name: Disable SSH access management
+  when: not (access_management_sshd_manage_access | bool)
+  block:
+    - name: Remove SSH access control
+      ansible.builtin.file:
+        path: "{{ access_management_sshd_access_config_file }}"
+        state: absent
+      notify:
+        - Validate SSH daemon configuration
+        - Reload SSH service
+
+    - name: Remove SSH access group
+      ansible.builtin.group:
+        name: "{{ access_management_sshd_access_group }}"
+        state: absent

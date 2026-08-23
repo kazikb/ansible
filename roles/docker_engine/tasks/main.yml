@@ -1,0 +1,13 @@
+---
+# tasks file for docker_engine
+
+- name: Apply docker engine
+  tags:
+    - docker_engine
+  block:
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "{{ ansible_facts['os_family'] | lower }}.yml"
+
+    - name: Import docker tasks
+      ansible.builtin.import_tasks: docker.yml

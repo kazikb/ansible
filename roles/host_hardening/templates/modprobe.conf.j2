@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+
+{% for module in host_hardening_kernel_modules_list_combined %}
+{% if module.state in ['enabled', 'configured']
+    and module.options is defined
+    and module.options | trim | length > 0 %}
+options {{ module.name }} {{ module.options }}
+
+{% elif module.state == 'disabled' %}
+blacklist {{ module.name }}
+install {{ module.name }} /bin/false
+
+{% endif %}
+{% endfor %}

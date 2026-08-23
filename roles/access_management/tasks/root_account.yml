@@ -1,0 +1,23 @@
+---
+- name: Configure root account
+  ansible.builtin.user:
+    name: root
+    state: present
+    password: "{{ access_management_root_account_password | default(omit, true) }}"
+    password_lock: "{{ access_management_root_account_password_lock | bool }}"
+    shell: "{{ access_management_root_account_shell | default(omit, true) }}"
+    update_password: always
+
+- name: Manage root SSH authorized keys
+  ansible.posix.authorized_key:
+    user: root
+    state: "{{ item.state }}"
+    key: "{{ item.pubkey }}"
+    manage_dir: true
+    follow: true
+  loop: "{{ access_management_root_account_ssh_authorized_keys }}"
+  loop_control:
+    label: >-
+      user: root
+      (key={{ item.pubkey | trim | truncate(45, true, '...') }}
+      key state={{ item.state }})

@@ -1,0 +1,103 @@
+---
+# defaults file for host_hardening
+
+# Manage the SSH daemon hardening [true | false]
+host_hardening_sshd_manage: false
+# Root login policy
+# prohibit-password: root public-key access is supported.
+# forced-commands-only: only for specialized root keys containing a command="..." restriction in authorized_keys.
+# no: root login prohibit.
+host_hardening_sshd_permit_root_login: "no"
+# Maximum authentication attempts per connection
+host_hardening_sshd_max_auth_tries: 3
+# Time allowed to complete authentication
+host_hardening_sshd_login_grace_time: 1m
+# Allow this host to act as an SSH jump host using ProxyJump or ssh -J [true | false]
+host_hardening_sshd_jump_host: false
+# SSH cryptographic algorithm policy
+# distribution: use distribution defaults
+# remove: remove listed algorithms from distribution defaults
+# replace: replace distribution defaults with the listed algorithms
+# ['distribution' | 'remove' | 'replace']
+host_hardening_sshd_algorithm_policy: 'distribution'
+# SSH key-exchange algorithms
+host_hardening_sshd_kex_algorithms: []
+# SSH encryption algorithms
+host_hardening_sshd_ciphers: []
+# SSH message authentication algorithms
+host_hardening_sshd_macs: []
+# Server host-key signature algorithms
+host_hardening_sshd_host_key_algorithms: []
+# SSH user public-key signature algorithms
+host_hardening_sshd_pubkey_accepted_algorithms: []
+
+# Host firewall management
+# Manage the host firewall [true | false]
+host_hardening_firewall_manage: false
+# Enable the firewall service and start it at boot [true | false]
+host_hardening_firewall_enabled: true
+# Enable native logging of denied firewall traffic. [true | false]
+host_hardening_firewall_logging: false
+# Default policy for unmatched incoming traffic
+# drop: silently discard packets
+# reject: discard packets and return an error response
+# ['drop' | 'reject']
+host_hardening_firewall_default_incoming_policy: drop
+# Ingress firewall rules managed by this role
+# host_hardening_firewall_ingress_rules_list:
+#   - name: ssh-access # Unique rule name
+#     state: present # absent | present
+#     protocol: tcp # tcp | udp
+#     destination_port: 22 # Destination port from 1 through 65535
+#     source: any # any, an IP address, or a CIDR network
+#   - name: https-access
+#     state: present
+#     protocol: tcp
+#     destination_port: 443
+#     source: 192.168.1.0/24
+#   - name: application-ports
+#     state: present
+#     protocol: tcp
+#     destination_port: "8000-8100" # Inclusive destination port range
+#     source: any
+host_hardening_firewall_ingress_rules_list: []
+
+# Additional ingress firewall rules appended to host_hardening_firewall_ingress_rules_list
+host_hardening_firewall_ingress_rules_list_append: []
+
+# Manage sysctl parameters [true | false]
+host_hardening_sysctl_manage: false
+# Sysctl parameters managed by this role
+# Parameters omitted from this list are not changed. Use state: absent to remove
+# a parameter from the role-managed sysctl file; value is only required for
+# state: present.
+# host_hardening_sysctl_params_list:
+#   - name: kernel.randomize_va_space
+#     value: "2"
+#     state: present
+#   - name: kernel.panic
+#     state: absent
+host_hardening_sysctl_params_list: []
+
+# Additional sysctl parameters appended to host_hardening_sysctl_params_list
+host_hardening_sysctl_params_list_append: []
+
+# Manage kernel modules [true | false]
+host_hardening_kernel_modules_manage: false
+# Kernel modules managed by this role
+# enabled: load now and at boot
+# configured: set options without loading
+# disabled: unload and block
+# Options are only valid with enabled and configured.
+# host_hardening_kernel_modules_list:
+#   - name: dummy
+#     options: "numdummies=1"
+#     state: enabled # configured | disabled | enabled
+host_hardening_kernel_modules_list: []
+
+# Additional kernel modules appended to host_hardening_kernel_modules_list
+host_hardening_kernel_modules_list_append: []
+
+# Reboot after the kernel module configuration changes and initramfs is rebuilt
+# [true | false]
+host_hardening_kernel_modules_reboot_on_change: false

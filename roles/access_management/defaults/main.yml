@@ -1,0 +1,126 @@
+---
+# Default variables for the access_management role
+
+# SSH access management
+# Restrict SSH access to members of the configured access group [true | false]
+access_management_sshd_manage_access: false
+# Group whose members are allowed to connect through SSH
+access_management_sshd_access_group: sshusers
+
+# Root account management
+# Manage the root account [true | false]
+access_management_root_account_manage: false
+# Lock the root account password [true | false]
+access_management_root_account_password_lock: true
+# Encrypted root password hash
+access_management_root_account_password: null
+# Root account login shell
+access_management_root_account_shell: /bin/bash
+# Root SSH authorized keys managed by this role
+# access_management_root_account_ssh_authorized_keys:
+#   - pubkey: "ssh-ed25519 AAAA..."
+#     state: present
+access_management_root_account_ssh_authorized_keys: []
+
+# Local groups to manage
+# access_management_groups_list:
+#   - name: homelab-group-1
+#     state: present # absent | present
+#     system: false # true | false
+#   - name: developers
+#     state: present # absent | present
+#     gid: 1500
+#     system: false # true | false
+#   - name: homelab-group-2
+#     state: absent # absent | present
+#   - name: operators
+#     state: present
+#     sudo_rules:
+#       - "ALL=(root) /usr/bin/journalctl"
+#       - "ALL=(root) /usr/bin/systemctl status *"
+access_management_groups_list: []
+
+# Additional local groups appended to access_management_groups_list
+access_management_groups_list_append: []
+
+# Local users to manage
+# access_management_users_list:
+#   # Automation account
+#   - username: ansible
+#     state: present
+#     comment: Ansible automation account
+#     shell: /bin/bash
+#     create_home: true
+#     groups:
+#       - platform
+#     ssh_authorized_keys:
+#       - pubkey: "ssh-ed25519 AAAA..."
+#         state: present
+#     sudo: true # Add the account to the OS-specific sudo or wheel group [true | false]
+#     sudo_nopasswd: true # Allow passwordless sudo access [true | false]
+#
+#   # Application user
+#   - username: application
+#     state: present
+#     sudo: true
+#     sudo_nopasswd: true
+#     sudo_rules:
+#       - "ALL=(root) NOPASSWD: /usr/bin/systemctl restart application.service"
+#       - "ALL=(postgres) /usr/bin/psql"
+#
+#   # Backup operator
+#   - username: backup
+#     state: present
+#     sudo_rules:
+#       - "ALL=(root) NOPASSWD: /usr/local/sbin/run-backup"
+#
+#   # Regular user
+#   - username: normal_user # Local account name
+#     state: present # absent | present
+#     password: "{{ vault_normal_user_password }}" # Encrypted password hash
+#     password_lock: false # Lock password authentication [true | false]
+#     comment: Normal User # User account description
+#     shell: /bin/bash # Login shell
+#     create_home: true # Create the home directory [true | false]
+#     groups: # Existing or role-managed supplementary groups
+#       - developers
+#     ssh_authorized_keys: # SSH public keys to manage
+#       - pubkey: "ssh-ed25519 AAAA... normal_user"
+#         state: present # absent | present
+#
+#   # Administrative user
+#   - username: admin_user
+#     state: present
+#     password: "{{ vault_admin_user_password }}"
+#     password_lock: false
+#     comment: Administrative User
+#     shell: /bin/bash
+#     create_home: true
+#     sudo: true # Add the account to the OS-specific sudo or wheel group [true | false]
+#     groups:
+#       - developers
+#       - docker
+#     ssh_access: true # Allow SSH access [true | false]
+#     ssh_authorized_keys:
+#       - pubkey: "ssh-ed25519 AAAA... admin_user"
+#         state: present
+#
+#   # System user
+#   - username: application_service
+#     state: present
+#     comment: Application service account
+#     system: true # Create a system account [true | false]
+#     password_lock: true
+#     shell: /usr/sbin/nologin
+#     create_home: false
+#     groups: []
+#     ssh_authorized_keys: []
+#
+#   # User to remove
+#   - username: obsolete_user
+#     state: absent
+#     remove: true # Remove the home directory and mail spool [true | false]
+access_management_users_list: []
+
+# Additional local users appended to access_management_users_list
+access_management_users_list_append: []

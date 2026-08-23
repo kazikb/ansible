@@ -1,0 +1,47 @@
+// {{ ansible_managed }}
+
+{% if ansible_facts['distribution'] == 'Ubuntu' %}
+#clear Unattended-Upgrade::Allowed-Origins;
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}";
+    "${distro_id}:${distro_codename}-security";
+
+{% if system_baseline_automatic_updates_upgrade_type == 'all' %}
+    "${distro_id}:${distro_codename}-updates";
+{% endif %}
+
+    "${distro_id}ESMApps:${distro_codename}-apps-security";
+    "${distro_id}ESM:${distro_codename}-infra-security";
+};
+{% elif ansible_facts['distribution'] == 'Debian' %}
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+{% if system_baseline_automatic_updates_upgrade_type == 'all' %}
+    "origin=Debian,codename=${distro_codename}-updates";
+{% endif %}
+
+    "origin=Debian,codename=${distro_codename},label=Debian";
+    "origin=Debian,codename=${distro_codename},label=Debian-Security";
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+{% endif %}
+
+#clear Unattended-Upgrade::Package-Blacklist;
+Unattended-Upgrade::Package-Blacklist {
+{% for package in system_baseline_automatic_updates_apt_package_blacklist %}
+    "{{ package }}";
+{% endfor %}
+};
+
+{% if system_baseline_mta_enabled | bool %}
+Unattended-Upgrade::Mail "root";
+Unattended-Upgrade::MailReport "{{ system_baseline_automatic_updates_apt_mail_report }}";
+{% endif %}
+
+Unattended-Upgrade::Automatic-Reboot "{{ 'true' if system_baseline_automatic_updates_automatic_reboot | bool else 'false' }}";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "{{ 'true' if system_baseline_automatic_updates_automatic_reboot | bool else 'false' }}";
+
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "false";
+
+Unattended-Upgrade::SyslogEnable "false";

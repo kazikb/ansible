@@ -1,0 +1,273 @@
+---
+argument_specs:
+  main:
+    short_description: Harden SSH, firewall, sysctl, and kernel modules
+    description:
+      - Hardens the OpenSSH server, manages the host firewall using the
+        operating system's native firewall backend, and manages sysctl
+        parameters and kernel modules.
+    options:
+      host_hardening_sshd_manage:
+        description: Manages the SSH daemon hardening configuration.
+        type: bool
+        default: false
+
+      host_hardening_sshd_permit_root_login:
+        description: Sets the SSH root login policy.
+        type: str
+        choices:
+          - forced-commands-only
+          - "no"
+          - prohibit-password
+        default: "no"
+
+      host_hardening_sshd_max_auth_tries:
+        description: Sets the maximum authentication attempts allowed per connection.
+        type: int
+        default: 3
+
+      host_hardening_sshd_login_grace_time:
+        description: Sets the time allowed to complete SSH authentication.
+        type: str
+        default: 1m
+
+      host_hardening_sshd_jump_host:
+        description: Allows the host to act as an SSH jump host using TCP forwarding.
+        type: bool
+        default: false
+
+      host_hardening_sshd_algorithm_policy:
+        description: Selects how configured SSH algorithms modify distribution defaults.
+        type: str
+        choices:
+          - distribution
+          - remove
+          - replace
+        default: distribution
+
+      host_hardening_sshd_kex_algorithms:
+        description: A list of SSH key-exchange algorithms.
+        type: list
+        elements: str
+        default: []
+
+      host_hardening_sshd_ciphers:
+        description: A list of SSH encryption algorithms.
+        type: list
+        elements: str
+        default: []
+
+      host_hardening_sshd_macs:
+        description: A list of SSH message authentication algorithms.
+        type: list
+        elements: str
+        default: []
+
+      host_hardening_sshd_host_key_algorithms:
+        description: A list of SSH server host-key signature algorithms.
+        type: list
+        elements: str
+        default: []
+
+      host_hardening_sshd_pubkey_accepted_algorithms:
+        description: A list of accepted SSH user public-key signature algorithms.
+        type: list
+        elements: str
+        default: []
+
+      host_hardening_firewall_manage:
+        description: Manages the host firewall.
+        type: bool
+        default: false
+
+      host_hardening_firewall_enabled:
+        description: Enables the firewall service and starts it at boot.
+        type: bool
+        default: true
+
+      host_hardening_firewall_logging:
+        description: Enable native logging of denied firewall traffic.
+        type: bool
+        default: false
+
+      host_hardening_firewall_default_incoming_policy:
+        description: Sets the policy for unmatched incoming traffic.
+        type: str
+        choices:
+          - drop
+          - reject
+        default: drop
+
+      host_hardening_firewall_ingress_rules_list:
+        description: A list of ingress firewall rules managed by this role.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the unique firewall rule name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the firewall rule is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          protocol:
+            description: Specifies the transport protocol matched by the rule.
+            type: str
+            choices:
+              - tcp
+              - udp
+            required: true
+          destination_port:
+            description: Specifies a destination port or inclusive port range using start-end syntax.
+            type: str
+            required: true
+          source:
+            description:
+              - Specifies any, an IP address, or a CIDR network as the packet source.
+            type: str
+            required: true
+
+      host_hardening_firewall_ingress_rules_list_append:
+        description:
+          - Additional ingress firewall rules appended to the primary rule list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the unique firewall rule name.
+            type: str
+            required: true
+          state:
+            description: Specifies whether the firewall rule is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+          protocol:
+            description: Specifies the transport protocol matched by the rule.
+            type: str
+            choices:
+              - tcp
+              - udp
+            required: true
+          destination_port:
+            description: Specifies a destination port or inclusive port range using start-end syntax.
+            type: str
+            required: true
+          source:
+            description:
+              - Specifies any, an IP address, or a CIDR network as the packet source.
+            type: str
+            required: true
+
+      host_hardening_sysctl_manage:
+        description: Manages sysctl parameters.
+        type: bool
+        default: false
+
+      host_hardening_sysctl_params_list:
+        description:
+          - A list of sysctl parameters managed by this role.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the sysctl parameter name.
+            type: str
+            required: true
+          value:
+            description: Specifies the desired value when state is present.
+            type: str
+          state:
+            description: Specifies whether the sysctl parameter is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      host_hardening_sysctl_params_list_append:
+        description:
+          - Additional sysctl parameters appended to the primary parameter list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the sysctl parameter name.
+            type: str
+            required: true
+          value:
+            description: Specifies the desired value when state is present.
+            type: str
+          state:
+            description: Specifies whether the sysctl parameter is present or absent.
+            type: str
+            choices:
+              - absent
+              - present
+            required: true
+
+      host_hardening_kernel_modules_manage:
+        description: Manages kernel modules.
+        type: bool
+        default: false
+
+      host_hardening_kernel_modules_list:
+        description: A list of kernel modules managed by this role.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the kernel module name.
+            type: str
+            required: true
+          options:
+            description: Module options for enabled or configured modules.
+            type: str
+            default: ""
+          state:
+            description: Defines how the role manages the kernel module.
+            type: str
+            choices:
+              - configured
+              - disabled
+              - enabled
+            required: true
+
+      host_hardening_kernel_modules_list_append:
+        description: Additional kernel modules appended to the primary list.
+        type: list
+        elements: dict
+        default: []
+        options:
+          name:
+            description: Specifies the kernel module name.
+            type: str
+            required: true
+          options:
+            description: Module options for enabled or configured modules.
+            type: str
+            default: ""
+          state:
+            description: Defines how the role manages the kernel module.
+            type: str
+            choices:
+              - configured
+              - disabled
+              - enabled
+            required: true
+
+      host_hardening_kernel_modules_reboot_on_change:
+        description: Reboots after kernel module configuration changes.
+        type: bool
+        default: false

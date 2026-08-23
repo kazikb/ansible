@@ -1,0 +1,212 @@
+---
+- name: Manage firewall settings on Debian
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - ansible_facts['distribution'] == 'Debian'
+  block:
+    - name: Ensure nftables is installed
+      ansible.builtin.apt:
+        name: nftables
+        state: present
+        update_cache: true
+        cache_valid_time: "{{ host_hardening_apt_cache_valid_time }}"
+
+    - name: Configure and enable nftables
+      when: host_hardening_firewall_enabled | bool
+      block:
+        - name: Configure nftables firewall
+          ansible.builtin.template:
+            src: nftables.conf.j2
+            dest: "{{ host_hardening_firewall_nftables_config_file }}"
+            owner: root
+            group: root
+            mode: '0755'
+            validate: 'nft -c -f %s'
+          notify: Reload nftables service
+
+        - name: Enable and start nftables firewall service
+          ansible.builtin.systemd_service:
+            name: nftables.service
+            state: started
+            enabled: true
+
+    - name: Disable and stop nftables
+      when: not (host_hardening_firewall_enabled | bool)
+      block:
+        - name: Disable and stop nftables firewall service
+          ansible.builtin.systemd_service:
+            name: nftables.service
+            state: stopped
+            enabled: false
+
+        - name: Disable nftables firewall check for active nftables tables
+          ansible.builtin.command:
+            cmd: nft list tables
+          register: host_hardening_firewall_nftables_tables
+          changed_when: false
+          check_mode: false
+
+        - name: Disable nftables firewall flush active nftables rules
+          ansible.builtin.command:
+            cmd: nft flush ruleset
+          changed_when: true
+          when: host_hardening_firewall_nftables_tables.stdout | trim | length > 0
+
+- name: Manage firewall settings on Ubuntu
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  block:
+    - name: Ensure ufw is installed
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+        update_cache: true
+        cache_valid_time: "{{ host_hardening_apt_cache_valid_time }}"
+
+    - name: Enable IPv6 support in ufw
+      ansible.builtin.lineinfile:
+        path: /etc/default/ufw
+        regexp: '^IPV6='
+        line: IPV6=yes
+      notify: Reload ufw service
+
+    - name: Configure and enable ufw
+      when: host_hardening_firewall_enabled | bool
+      block:
+        - name: Set default ufw policy incoming
+          community.general.ufw:
+            default: >-
+              {{
+                'reject'
+                if host_hardening_firewall_default_incoming_policy == 'reject'
+                else 'deny'
+              }}
+            direction: incoming
+
+        - name: Set default ufw policy outgoing
+          community.general.ufw:
+            default: allow
+            direction: outgoing
+
+        - name: Manage ufw rules
+          community.general.ufw:
+            rule: allow
+            delete: "{{ item.state == 'absent' }}"
+            direction: in
+            proto: "{{ item.protocol }}"
+            to_port: "{{ item.destination_port | string | replace('-', ':') }}"
+            from_ip: "{{ item.source }}"
+            comment: "Ansible managed: {{ item.name }}"
+          loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+
+        - name: Set ufw logging
+          community.general.ufw:
+            logging: "{{ 'on' if (host_hardening_firewall_logging | bool) else 'off' }}"
+
+        - name: Enable ufw service
+          community.general.ufw:
+            state: enabled
+
+    - name: Disable ufw service
+      when: not (host_hardening_firewall_enabled | bool)
+      community.general.ufw:
+        state: disabled
+
+- name: Manage firewall settings on RedHat
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+  block:
+    - name: Ensure firewalld is installed
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+        update_cache: true
+
+    - name: Configure and enable firewalld
+      when: host_hardening_firewall_enabled | bool
+      block:
+        - name: Manage unrestricted firewalld ingress rules
+          ansible.posix.firewalld:
+            zone: "{{ host_hardening_firewall_firewalld_default_zone }}"
+            port: "{{ item.destination_port }}/{{ item.protocol }}"
+            state: "{{ 'enabled' if item.state == 'present' else 'disabled' }}"
+            immediate: true
+            permanent: true
+            offline: true
+          loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+          loop_control:
+            label: "rule: {{ item.name }}"
+          when: item.source == 'any'
+
+        - name: Manage source-restricted firewalld ingress rules
+          ansible.posix.firewalld:
+            zone: "{{ host_hardening_firewall_firewalld_default_zone }}"
+            rich_rule: >-
+              rule family="{{
+                'ipv4'
+                if (item.source | ansible.utils.ipv4)
+                else 'ipv6'
+              }}"
+              source address="{{ item.source }}"
+              port port="{{ item.destination_port }}"
+              protocol="{{ item.protocol }}"
+              accept
+            state: "{{ 'enabled' if item.state == 'present' else 'disabled' }}"
+            immediate: true
+            permanent: true
+            offline: true
+          loop: "{{ host_hardening_firewall_ingress_rules_list_combined }}"
+          loop_control:
+            label: "rule: {{ item.name }}"
+          when: item.source != 'any'
+
+        - name: Configure firewalld denied traffic logging
+          ansible.builtin.lineinfile:
+            path: /etc/firewalld/firewalld.conf
+            regexp: '^LogDenied='
+            line: >-
+              LogDenied={{
+                'all'
+                if (host_hardening_firewall_logging | bool)
+                else 'off'
+              }}
+          notify: Reload firewalld service
+
+        - name: Remove default services from the public zone
+          ansible.posix.firewalld:
+            zone: "{{ host_hardening_firewall_firewalld_default_zone }}"
+            service: "{{ item }}"
+            state: disabled
+            immediate: true
+            permanent: true
+            offline: true
+          loop:
+            - cockpit
+            - dhcpv6-client
+            - ssh
+
+        - name: Set the public zone default target
+          ansible.posix.firewalld:
+            zone: "{{ host_hardening_firewall_firewalld_default_zone }}"
+            target: >-
+              {{
+                '%%REJECT%%'
+                if host_hardening_firewall_default_incoming_policy == 'reject'
+                else 'DROP'
+              }}
+            state: present
+            permanent: true
+            offline: true
+          notify: Reload firewalld service
+
+        - name: Enable and start firewalld service
+          ansible.builtin.systemd_service:
+            name: firewalld.service
+            state: started
+            enabled: true
+
+    - name: Disable and stop firewalld service
+      when: not (host_hardening_firewall_enabled | bool)
+      ansible.builtin.systemd_service:
+        name: firewalld.service
+        state: stopped
+        enabled: false

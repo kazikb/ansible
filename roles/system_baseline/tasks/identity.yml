@@ -1,0 +1,36 @@
+---
+- name: Configure static hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname_short }}"
+  when: system_baseline_manage_hostname | bool
+
+- name: Configure Debian loopback hostname entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1(?:\s|$)'
+    line: "127.0.1.1 {{ inventory_hostname_short }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - system_baseline_manage_hostname | bool
+    - not system_baseline_remove_debian_hostname_entry | bool
+
+- name: Remove Debian loopback hostname entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1(?:\s|$)'
+    state: absent
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - system_baseline_remove_debian_hostname_entry | bool
+
+- name: Configure static host resolution
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED HOST ENTRIES"
+    block: "{{ system_baseline_hosts_entries | default([]) | join('\n') }}"
+    owner: root
+    group: root
+    mode: '0644'

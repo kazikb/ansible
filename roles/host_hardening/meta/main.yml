@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  author: Kazimierz Biskup
+  description: Manages OpenSSH hardening, the host firewall, sysctl parameters, and kernel modules.
+  license: MIT
+  min_ansible_version: "2.21"
+
+  platforms:
+    - name: EL
+      versions:
+        - "10"
+    - name: Ubuntu
+      versions:
+        - noble
+        - resolute
+    - name: Debian
+      versions:
+        - trixie
+
+dependencies: []

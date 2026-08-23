@@ -1,0 +1,26 @@
+---
+# Applies the base role composition with Docker Engine to disposable supported
+# Linux hosts for integration testing. Connection settings and role variables
+# must come from an external inventory.
+#
+# Docker Engine is installed before access management so managed users can be
+# assigned authoritatively to the Docker group.
+#
+# This playbook changes system configuration and may restart services or hosts.
+#
+# Preview one host:
+# ansible-playbook playbooks/dev/integration-test-docker.yml -i <inventory> --check --diff --limit <host>
+#
+# Apply the Docker role composition:
+# ansible-playbook playbooks/dev/integration-test-docker.yml -i <inventory> --limit <host>
+#
+- name: Apply Docker host roles for integration testing
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: system_baseline
+    - role: docker_engine
+    - role: access_management
+    - role: host_hardening

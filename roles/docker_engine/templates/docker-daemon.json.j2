@@ -1,0 +1,29 @@
+{%- set docker_engine_daemon_config = {
+    'log-driver': docker_engine_daemon_log_driver,
+    'log-format': docker_engine_daemon_log_format,
+    'log-level': docker_engine_daemon_log_level,
+    'live-restore': docker_engine_daemon_live_restore | bool
+    }
+-%}
+
+{%- if docker_engine_daemon_bip is not none %}
+{%- set docker_engine_daemon_config = docker_engine_daemon_config | combine({
+    'bip': docker_engine_daemon_bip
+    })
+-%}
+{%- endif %}
+
+{%- if docker_engine_daemon_default_address_pool_list | length > 0 %}
+{%- set docker_engine_daemon_config = docker_engine_daemon_config | combine({
+    'default-address-pools': docker_engine_daemon_default_address_pool_list
+    })
+-%}
+{%- endif %}
+
+{%- if docker_engine_daemon_log_options | length > 0 %}
+{%- set docker_engine_daemon_config = docker_engine_daemon_config | combine({
+    'log-opts': docker_engine_daemon_log_options
+    })
+-%}
+{%- endif %}
+{{ docker_engine_daemon_config | to_nice_json(indent=2) }}

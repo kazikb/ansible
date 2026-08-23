@@ -1,0 +1,68 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+
+destroy table inet host_hardening
+
+table inet host_hardening {
+
+    chain inbound_ipv4 {
+        # accepting ping (icmp-echo-request) for diagnostic purposes.
+        icmp type echo-request limit rate 5/second accept
+    }
+
+    chain inbound_ipv6 {
+        # accept neighbour discovery otherwise connectivity breaks
+        #
+        icmpv6 type { nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept
+
+        # accepting ping (icmpv6-echo-request) for diagnostic purposes.
+        icmpv6 type echo-request limit rate 5/second accept
+    }
+
+    chain inbound {
+
+        # By default, drop all traffic unless it meets a filter
+        # criteria specified by the rules that follow below.
+        type filter hook input priority filter; policy drop;
+
+        # Allow traffic from established and related packets, drop invalid
+        ct state vmap { established : accept, related : accept, invalid : drop }
+
+        # Allow loopback traffic.
+        iifname lo accept
+
+        # Jump to chain according to layer 3 protocol using a verdict map
+        meta protocol vmap { ip : jump inbound_ipv4, ip6 : jump inbound_ipv6 }
+
+        # Allow ingress rules
+{% for rule in host_hardening_firewall_ingress_rules_list_combined %}
+{% if rule.state == 'present' %}
+{% if rule.source == 'any' %}
+{% set source = '' %}
+{% elif rule.source | ansible.utils.ipv4 %}
+{% set source = 'ip saddr ' ~ rule.source ~ ' ' %}
+{% else %}
+{% set source = 'ip6 saddr ' ~ rule.source ~ ' ' %}
+{% endif %}
+        {{ source }}{{ rule.protocol }} dport {{ rule.destination_port }} accept comment "{{ rule.name }}"
+{% endif %}
+{% endfor %}
+
+{% if host_hardening_firewall_logging | bool %}
+        # Logging of denied inbound traffic
+{% if host_hardening_firewall_default_incoming_policy == 'reject' %}
+        limit rate 5/second burst 10 packets log prefix "[nftables] Inbound Rejected: " counter
+{% else %}
+        limit rate 5/second burst 10 packets log prefix "[nftables] Inbound Denied: " counter
+{% endif %}
+{% endif %}
+{% if host_hardening_firewall_default_incoming_policy == 'reject' %}
+        # Reject packets
+        reject
+{% endif %}
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}

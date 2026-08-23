@@ -1,0 +1,96 @@
+---
+- name: Initialize prepared user list
+  ansible.builtin.set_fact:
+    access_management_users_list_prepared: []
+
+- name: Prepare user group memberships
+  ansible.builtin.set_fact:
+    access_management_users_list_prepared: >-
+      {{
+        access_management_users_list_prepared
+        +
+        [
+          item | combine({
+            'groups_to_apply': access_management_groups_to_apply
+          })
+        ]
+      }}
+  vars:
+    access_management_groups_to_apply: >-
+      {{
+        (
+          (
+            item.groups | default([])
+          )
+          +
+          (
+            [access_management_sudo_group]
+            if (item.sudo | default(false) | bool)
+            else []
+          )
+          +
+          (
+            [access_management_sshd_access_group]
+            if (
+              (access_management_sshd_manage_access | bool)
+              and (item.ssh_access | default(false) | bool)
+            )
+            else []
+          )
+        )
+        | unique
+        | sort
+        | list
+      }}
+  loop: "{{ access_management_users_list_combined }}"
+  loop_control:
+    label: "user: {{ item.username }}"
+
+- name: Manage local users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    state: "{{ item.state }}"
+    uid: "{{ item.uid | default(omit) }}"
+    password: "{{ item.password | default(omit) }}"
+    password_lock: "{{ item.password_lock | default(omit) }}"
+    update_password: always
+    shell: "{{ item.shell | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+    create_home: "{{ item.create_home | default(true) }}"
+    home: "{{ item.home | default(omit) }}"
+    move_home: "{{ item.move_home | default(false) }}"
+    append: false
+    group: "{{ item.group | default(omit) }}"
+    groups: "{{ item.groups_to_apply }}"
+    umask: "{{ item.umask | default(omit) }}"
+    system: "{{ item.system | default(false) }}"
+    remove: "{{ item.remove | default(false) }}"
+  loop: "{{ access_management_users_list_prepared }}"
+  loop_control:
+    label: >-
+      user: {{ item.username }}
+      (state={{ item.state }}
+      sudo={{ item.sudo | default(false) | bool }}
+      sudo_nopasswd={{ item.sudo_nopasswd | default(false) | bool }}
+      ssh_access={{ item.ssh_access | default(false) | bool }}
+      system={{ item.system | default(false) | bool }}
+      create_home={{ item.create_home | default(true) | bool }}
+      groups={{ item.groups_to_apply }})
+
+- name: Manage SSH authorized keys for local users
+  ansible.posix.authorized_key:
+    user: "{{ item.0.username }}"
+    state: "{{ item.1.state }}"
+    key: "{{ item.1.pubkey }}"
+    manage_dir: true
+  when: item.0.state == 'present'
+  loop: >-
+    {{
+      access_management_users_list_prepared
+      | subelements('ssh_authorized_keys', skip_missing=True)
+    }}
+  loop_control:
+    label: >-
+      user: {{ item.0.username }}
+      (key={{ item.1.pubkey | trim | truncate(45, true, '...') }}
+      key state={{ item.1.state }})

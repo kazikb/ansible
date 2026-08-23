@@ -1,0 +1,44 @@
+---
+- name: Configure mail relay on Debian and Ubuntu
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    # http://www.postfix.org/ADDRESS_REWRITING_README.html
+    - name: Configure debconf for Postfix installation
+      ansible.builtin.debconf:
+        name: postfix
+        question: postfix/main_mailer_type
+        value: No configuration
+        vtype: select
+
+    - name: Install Postfix on Debian and Ubuntu
+      ansible.builtin.apt:
+        name:
+          - mailutils
+          - postfix
+        state: present
+        update_cache: true
+        cache_valid_time: "{{ system_baseline_apt_cache_valid_time }}"
+
+- name: Install Postfix on Red Hat systems
+  when: ansible_facts['os_family'] == 'RedHat'
+  ansible.builtin.dnf:
+    name:
+      - postfix
+      - s-nail
+    state: present
+    update_cache: true
+
+- name: Configure Postfix null client
+  ansible.builtin.template:
+    src: postfix-main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Postfix
+
+- name: Enable and start Postfix service
+  ansible.builtin.systemd_service:
+    name: postfix
+    state: started
+    enabled: true

@@ -1,0 +1,66 @@
+# {{ ansible_managed }}
+#
+# SSH server security policy.
+# Based in part on:
+# https://infosec.mozilla.org/guidelines/openssh
+{% if host_hardening_sshd_algorithm_policy != 'distribution' %}
+{% set algorithm_prefix =
+     '-' if host_hardening_sshd_algorithm_policy == 'remove'
+     else ''
+%}
+
+# SSH transport algorithm policy
+{% if host_hardening_sshd_kex_algorithms | length > 0 %}
+KexAlgorithms {{ algorithm_prefix }}{{ host_hardening_sshd_kex_algorithms | join(',') }}
+{% endif %}
+{% if host_hardening_sshd_ciphers | length > 0 %}
+Ciphers {{ algorithm_prefix }}{{ host_hardening_sshd_ciphers | join(',') }}
+{% endif %}
+{% if host_hardening_sshd_macs | length > 0 %}
+MACs {{ algorithm_prefix }}{{ host_hardening_sshd_macs | join(',') }}
+{% endif %}
+{% if host_hardening_sshd_host_key_algorithms | length > 0 %}
+HostKeyAlgorithms {{ algorithm_prefix }}{{ host_hardening_sshd_host_key_algorithms | join(',') }}
+{% endif %}
+{% if host_hardening_sshd_pubkey_accepted_algorithms | length > 0 %}
+PubkeyAcceptedAlgorithms {{ algorithm_prefix }}{{ host_hardening_sshd_pubkey_accepted_algorithms | join(',') }}
+{% endif %}
+{% endif %}
+
+# Authentication policy
+AuthenticationMethods publickey
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+
+# Retain PAM account and session processing.
+UsePAM yes
+
+# Authorized public-key location
+AuthorizedKeysFile .ssh/authorized_keys
+
+# Privileged root access
+PermitRootLogin {{ host_hardening_sshd_permit_root_login }}
+
+# Disable unused authentication mechanisms
+KerberosAuthentication no
+GSSAPIAuthentication no
+HostbasedAuthentication no
+IgnoreRhosts yes
+
+# Authentication limits and logging
+LogLevel VERBOSE
+MaxAuthTries {{ host_hardening_sshd_max_auth_tries }}
+LoginGraceTime {{ host_hardening_sshd_login_grace_time }}
+
+# User-controlled session features
+PermitUserEnvironment no
+
+# Forwarding
+AllowTcpForwarding {{ host_hardening_sshd_jump_host | bool | ternary('local', 'no') }}
+AllowAgentForwarding no
+AllowStreamLocalForwarding no
+X11Forwarding no
+PermitTunnel no
+GatewayPorts no

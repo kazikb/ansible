@@ -1,0 +1,48 @@
+---
+- name: Configure global Vim settings
+  ansible.builtin.blockinfile:
+    path: "{{ system_baseline_vimrc_global_config_file }}"
+    marker: '" {mark} ANSIBLE MANAGED VIM BASELINE'
+    insertafter: EOF
+    owner: root
+    group: root
+    mode: "0644"
+    create: true
+    block: |
+      syntax enable
+      filetype plugin indent on
+
+      " General settings
+      set number
+      set hlsearch
+      set incsearch
+      set ignorecase
+      set smartcase
+      set autoindent
+      set showmatch
+      set tabstop=8
+
+      " Filetype-specific settings
+      augroup system_baseline_filetypes
+        autocmd!
+
+        " YAML
+        autocmd FileType yaml setlocal expandtab shiftwidth=2 softtabstop=2
+
+        " Python
+        autocmd FileType python setlocal expandtab shiftwidth=4 softtabstop=4
+
+        " POSIX shell, Bash, Dash and Korn shell
+        autocmd FileType sh setlocal expandtab shiftwidth=2 softtabstop=2
+
+        " Zsh uses its own Vim filetype
+        autocmd FileType zsh setlocal expandtab shiftwidth=2 softtabstop=2
+      augroup END
+
+- name: Configure system editor alternative
+  community.general.alternatives:
+    name: editor
+    link: /usr/bin/editor
+    path: "{{ system_baseline_editor_path }}"
+    priority: 60
+    state: selected

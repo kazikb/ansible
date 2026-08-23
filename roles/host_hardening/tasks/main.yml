@@ -1,0 +1,59 @@
+---
+# tasks file for host_hardening
+
+- name: Apply host hardening
+  tags:
+    - host_hardening
+  block:
+    - name: Combine firewall ingress rules definitions
+      ansible.builtin.set_fact:
+        host_hardening_firewall_ingress_rules_list_combined: >-
+          {{
+            (host_hardening_firewall_ingress_rules_list | default([]))
+            + (host_hardening_firewall_ingress_rules_list_append | default([]))
+          }}
+
+    - name: Combine sysctl parameters definitions
+      ansible.builtin.set_fact:
+        host_hardening_sysctl_params_list_combined: >-
+          {{
+            (host_hardening_sysctl_params_list | default([]))
+            + (host_hardening_sysctl_params_list_append | default([]))
+          }}
+
+    - name: Combine kernel modules definitions
+      ansible.builtin.set_fact:
+        host_hardening_kernel_modules_list_combined: >-
+          {{
+            (host_hardening_kernel_modules_list | default([]))
+            + (host_hardening_kernel_modules_list_append | default([]))
+          }}
+
+    - name: Gather facts on listening ports
+      community.general.listen_ports_facts:
+      when:
+        - host_hardening_firewall_manage | bool
+        - host_hardening_firewall_enabled | bool
+
+    - name: Validate host hardening configuration
+      ansible.builtin.import_tasks: validate.yml
+
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "{{ ansible_facts['os_family'] | lower }}.yml"
+
+    - name: Import ssh tasks
+      ansible.builtin.import_tasks: ssh.yml
+      when: host_hardening_sshd_manage | bool
+
+    - name: Import firewall tasks
+      ansible.builtin.import_tasks: firewall.yml
+      when: host_hardening_firewall_manage | bool
+
+    - name: Import sysctl tasks
+      ansible.builtin.import_tasks: sysctl.yml
+      when: host_hardening_sysctl_manage | bool
+
+    - name: Import kernel modules tasks
+      ansible.builtin.import_tasks: kernel_modules.yml
+      when: host_hardening_kernel_modules_manage | bool

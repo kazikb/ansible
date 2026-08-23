@@ -1,0 +1,85 @@
+---
+# Default variables for the system_baseline role
+
+# Set the hostname to inventory_hostname_short [true | false]
+system_baseline_manage_hostname: true
+# Lines to manage in a dedicated block in /etc/hosts
+system_baseline_hosts_entries: []
+# Remove Debian's 127.0.1.1 hostname entry when managed real-IP entries provide
+# the host's local identity [true | false]
+system_baseline_remove_debian_hostname_entry: false
+
+# System timezone
+system_baseline_timezone: Europe/Warsaw
+
+# NTP servers used by the detected time service
+system_baseline_ntp_server_list: []
+
+# [Debian and Ubuntu] Locales to generate or remove
+system_baseline_debian_locale_to_add:
+  - name: en_US.UTF-8 # Locale name from /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+  - name: pl_PL.UTF-8 # Locale name from /usr/share/i18n/SUPPORTED
+    state: present # absent | present
+
+# [Red Hat] Locale language-pack packages to install or remove
+system_baseline_redhat_locale_to_add:
+  - name: glibc-langpack-pl # DNF package name
+    state: present # absent | present
+  - name: glibc-langpack-en # DNF package name
+    state: present # absent | present
+
+# System-wide default locale
+system_baseline_locale: en_US.UTF-8
+
+# Postfix mail relay
+# Install and configure Postfix for sending notifications [true | false]
+system_baseline_mta_enabled: false
+# Address that receives system notifications
+system_baseline_mta_notification_email: ""
+# SMTP relay host
+system_baseline_mta_smtp_relayhost: ""
+# SMTP relay port
+system_baseline_mta_smtp_relay_port: null
+# Domain used for rewritten sender addresses
+system_baseline_mta_sender_domain:
+# none: no TLS
+# may: opportunistic TLS
+# encrypt: require TLS
+system_baseline_mta_smtp_tls_security_level: may
+
+# Automatic updates
+# Configure automatic package updates [true | false]
+system_baseline_automatic_updates_enabled: false
+# Type of updates to install [all | security]
+system_baseline_automatic_updates_upgrade_type: security
+# Automatically reboot when required after updates [true | false]
+system_baseline_automatic_updates_automatic_reboot: false
+# Daily automatic-update time
+system_baseline_automatic_updates_upgrade_time: "02:00"
+# Randomized delay for the automatic-update timer
+system_baseline_automatic_updates_upgrade_randomized_delay_sec: "15m"
+
+# [Debian and Ubuntu] APT automatic updates
+# APT mail report policy [always | on-change | only-on-error]
+system_baseline_automatic_updates_apt_mail_report: on-change
+# Daily APT package-list download times
+system_baseline_automatic_updates_apt_download_time: "05,22:00"
+# Randomized delay for the APT package-list download timer
+system_baseline_automatic_updates_apt_download_randomized_delay_sec: "10m"
+# Package-name regular expressions excluded from unattended upgrades
+system_baseline_automatic_updates_apt_package_blacklist: []
+
+# [Red Hat] DNF Automatic
+# Package names or globs excluded from automatic updates
+system_baseline_automatic_updates_dnf_package_exclude: []
+
+# Root CA certificates to add to or remove from the system trust store
+# system_baseline_root_ca_list:
+#   - filename: homelab-root-ca.crt
+#     state: present # absent | present
+#     content: |
+#       -----BEGIN CERTIFICATE-----
+#       ...
+#       -----END CERTIFICATE-----
+system_baseline_root_ca_list: []

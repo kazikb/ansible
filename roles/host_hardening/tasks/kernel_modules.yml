@@ -1,0 +1,102 @@
+---
+- name: Ensure kernel module configuration directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/modprobe.d
+    - /etc/modules-load.d
+
+- name: Check whether modules-load configuration is required
+  ansible.builtin.set_fact:
+    host_hardening_kernel_modules_load_config_required: >-
+      {{
+        host_hardening_kernel_modules_list_combined
+              | selectattr('state', 'equalto', 'enabled')
+              | list
+              | length > 0
+      }}
+
+- name: Configure modules to load at boot
+  ansible.builtin.template:
+    src: modules-load.conf.j2
+    dest: "{{ host_hardening_kernel_modules_load_file }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: host_hardening_kernel_modules_load_config_required | bool
+  register: host_hardening_kernel_modules_load_present
+
+- name: Remove modules-load configuration
+  ansible.builtin.file:
+    path: "{{ host_hardening_kernel_modules_load_file }}"
+    state: absent
+  when: not (host_hardening_kernel_modules_load_config_required | bool)
+  register: host_hardening_kernel_modules_load_absent
+
+- name: Check whether modprobe configuration is required
+  ansible.builtin.set_fact:
+    host_hardening_kernel_modules_config_required: >-
+      {{
+        (
+          host_hardening_kernel_modules_list_combined
+          | selectattr('state', 'equalto', 'disabled')
+          | list
+          | length > 0
+        )
+        or
+        (
+          host_hardening_kernel_modules_list_combined
+          | map(attribute='options', default='')
+          | map('trim')
+          | reject('equalto', '')
+          | list
+          | length > 0
+        )
+      }}
+
+- name: Configure modprobe
+  ansible.builtin.template:
+    src: modprobe.conf.j2
+    dest: "{{ host_hardening_kernel_modules_config_file }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: host_hardening_kernel_modules_config_required | bool
+  register: host_hardening_kernel_modules_modprobe_present
+
+- name: Remove modprobe configuration
+  ansible.builtin.file:
+    path: "{{ host_hardening_kernel_modules_config_file }}"
+    state: absent
+  when: not (host_hardening_kernel_modules_config_required | bool)
+  register: host_hardening_kernel_modules_modprobe_absent
+
+- name: Determine if kernel initramfs rebuild is needed
+  ansible.builtin.set_fact:
+    host_hardening_kernel_modules_persistent_changed: >-
+        {{
+          host_hardening_kernel_modules_modprobe_present.changed
+          or host_hardening_kernel_modules_modprobe_absent.changed
+          or host_hardening_kernel_modules_load_present.changed
+          or host_hardening_kernel_modules_load_absent.changed
+        }}
+
+- name: Rebuild initramfs images
+  ansible.builtin.command:
+    argv: "{{ host_hardening_kernel_modules_initramfs_command }}"
+  changed_when: true
+  when: host_hardening_kernel_modules_persistent_changed | bool
+  notify: Reboot after kernel module changes
+
+- name: Apply kernel module runtime states
+  community.general.modprobe:
+    name: "{{ item.name }}"
+    state: "{{ 'present' if item.state == 'enabled' else 'absent' }}"
+  when: item.state in ['enabled', 'disabled']
+  loop: "{{ host_hardening_kernel_modules_list_combined }}"
+  loop_control:
+    label: "{{ item.name }} state={{ item.state }}"

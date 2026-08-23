@@ -1,0 +1,22 @@
+---
+# vars file for system_baseline Debian OS
+
+system_baseline_locale_config_file: /etc/default/locale
+
+system_baseline_vimrc_global_config_file: /etc/vim/vimrc.local
+system_baseline_editor_path: /usr/bin/vim.basic
+
+system_baseline_cron_service_name: cron.service
+system_baseline_chrony_config_file: /etc/chrony/chrony.conf
+
+# Distribution specific packages to install
+system_baseline_distribution_package_list:
+  - bind9-dnsutils
+  - netcat-openbsd
+  - iproute2
+
+system_baseline_apt_cache_valid_time: 3600 # 1 hour
+
+# Root CA
+system_baseline_ca_certificates_path: /usr/local/share/ca-certificates
+system_baseline_ca_update_command: update-ca-certificates --fresh

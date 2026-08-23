@@ -1,0 +1,22 @@
+---
+# handlers file for system_baseline
+
+- name: Restart NTP service
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: "{{ system_baseline_detected_ntp_service }}.service"
+
+- name: Restart cron
+  ansible.builtin.systemd_service:
+    name: "{{ system_baseline_cron_service_name }}"
+    state: restarted
+  when: system_baseline_cron_service_name in ansible_facts.services
+
+- name: Restart Postfix
+  ansible.builtin.systemd_service:
+    name: postfix
+    state: restarted
+
+- name: Reload systemd manager configuration
+  ansible.builtin.systemd_service:
+    daemon_reload: true

@@ -1,0 +1,5 @@
+---
+# vars file for access_management
+
+# SSH daemon access-control configuration
+access_management_sshd_access_config_file: /etc/ssh/sshd_config.d/40-access-management.conf

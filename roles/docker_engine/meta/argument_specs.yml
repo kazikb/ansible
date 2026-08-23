@@ -1,0 +1,71 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Docker Engine
+    description:
+      - Installs Docker Engine and configures the Docker daemon on supported
+        Debian, Ubuntu and Enterprise Linux systems.
+    options:
+      docker_engine_daemon_bip:
+        description:
+          - Sets the IPv4 gateway address and subnet for the default docker0 bridge.
+          - When null, Docker uses its default network configuration.
+        type: str
+        default: null
+
+      docker_engine_daemon_default_address_pool_list:
+        description:
+          - Defines address pools used to allocate subnets for user-defined networks.
+        type: list
+        elements: dict
+        default: []
+        options:
+          base:
+            description: Specifies the base network in CIDR notation.
+            type: str
+            required: true
+          size:
+            description:
+              - Specifies the prefix size of subnets allocated from the base network.
+            type: int
+            required: true
+
+      docker_engine_daemon_log_driver:
+        description:
+          - Sets the default logging driver for newly created containers.
+        type: str
+        default: local
+
+      docker_engine_daemon_log_format:
+        description: Sets the output format for Docker daemon logs.
+        type: str
+        choices:
+          - json
+          - text
+        default: text
+
+      docker_engine_daemon_log_options:
+        description:
+          - Defines options passed to the default container logging driver.
+          - Option values must be strings.
+        type: dict
+        default:
+          max-size: "20m"
+          max-file: "5"
+
+      docker_engine_daemon_log_level:
+        description: Sets the Docker daemon logging level.
+        type: str
+        choices:
+          - debug
+          - info
+          - warn
+          - error
+          - fatal
+        default: info
+
+      docker_engine_daemon_live_restore:
+        description:
+          - Keeps standalone containers running while the Docker daemon is unavailable.
+        type: bool
+        default: true

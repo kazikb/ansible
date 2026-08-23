@@ -1,0 +1,81 @@
+---
+# Installs available package updates on supported Linux hosts.
+# Reboots hosts when required and removes unused packages after the upgrade.
+#
+# Requirements:
+# - Red Hat systems require dnf-plugins-core for reboot detection.
+#   The system_baseline role installs this package.
+#
+# Preview targeted hosts:
+# ansible-playbook playbooks/install-updates.yml -i <inventory> --limit <host> --list-hosts
+#
+# Install updates:
+# ansible-playbook playbooks/install-updates.yml -i <inventory> --limit <host>
+#
+- name: Install system updates
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    install_updates_connect_timeout: 5
+    install_updates_post_reboot_delay: 10
+    install_updates_reboot_timeout: 3600
+
+  tasks:
+    - name: Install updates on Debian and Ubuntu
+      when: ansible_facts['os_family'] == 'Debian'
+      block:
+        - name: Upgrade packages on Debian and Ubuntu
+          ansible.builtin.apt:
+            update_cache: true
+            upgrade: safe
+
+        - name: Remove unused packages on Debian and Ubuntu
+          ansible.builtin.apt:
+            autoremove: true
+            purge: true
+
+        - name: Check whether reboot is required on Debian and Ubuntu
+          ansible.builtin.stat:
+            path: /var/run/reboot-required
+            get_checksum: false
+          register: reboot_required_file
+
+        - name: Reboot updated Debian and Ubuntu hosts
+          ansible.builtin.reboot:
+            connect_timeout: "{{ install_updates_connect_timeout }}"
+            msg: "Reboot initiated by Ansible to update host"
+            post_reboot_delay: "{{ install_updates_post_reboot_delay }}"
+            reboot_timeout: "{{ install_updates_reboot_timeout }}"
+          when: reboot_required_file.stat.exists
+
+    - name: Install updates on Red Hat systems
+      when: ansible_facts['os_family'] == 'RedHat'
+      block:
+        - name: Upgrade packages on Red Hat systems
+          ansible.builtin.dnf:
+            name: "*"
+            state: latest
+            update_only: true
+            update_cache: true
+
+        # https://access.redhat.com/solutions/27943
+        - name: Check whether reboot is required on Red Hat systems
+          ansible.builtin.command:
+            cmd: dnf needs-restarting -r
+          register: reboot_required
+          failed_when: reboot_required.rc not in [0, 1]
+          changed_when: false
+
+        - name: Remove unused packages on Red Hat systems
+          ansible.builtin.dnf:
+            autoremove: true
+
+        - name: Reboot updated Red Hat hosts
+          ansible.builtin.reboot:
+            connect_timeout: "{{ install_updates_connect_timeout }}"
+            msg: "Reboot initiated by Ansible to update host"
+            post_reboot_delay: "{{ install_updates_post_reboot_delay }}"
+            reboot_timeout: "{{ install_updates_reboot_timeout }}"
+          when: reboot_required.rc == 1

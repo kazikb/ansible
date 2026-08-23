@@ -1,0 +1,36 @@
+---
+# defaults file for docker_engine
+
+# IPv4 gateway address and subnet for the default docker0 bridge.
+# null uses Docker's default network configuration.
+docker_engine_daemon_bip: null
+
+# Address pools used to allocate subnets for user-defined networks.
+# Each entry requires a base CIDR and the prefix size of allocated subnets.
+# docker_engine_daemon_default_address_pool_list:
+#   - base: 172.20.0.0/16
+#     size: 24
+#   - base: 172.21.0.0/16
+#     size: 24
+docker_engine_daemon_default_address_pool_list: []
+
+# Default logging driver for newly created containers.
+docker_engine_daemon_log_driver: local
+
+# Docker daemon log output format
+# [text | json]
+docker_engine_daemon_log_format: text
+
+# Options for the default container logging driver.
+# Values must be strings as required by Docker.
+docker_engine_daemon_log_options:
+  max-size: "20m"
+  max-file: "5"
+
+# Docker daemon logging level
+# [debug | info | warn | error | fatal]
+docker_engine_daemon_log_level: info
+
+# Keep standalone containers running while the Docker daemon is unavailable
+# [true | false]
+docker_engine_daemon_live_restore: true

@@ -1,0 +1,38 @@
+---
+# handlers file for host_hardening
+
+# Keep these handler names and their order aligned with other roles
+# that manage SSH daemon configuration. Identical names ensure that
+# SSH validation and reload run only once per handler flush.
+# Roles using this handlers:
+# - access_management
+# - host_hardening
+- name: Validate SSH daemon configuration
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: Reload SSH service
+  ansible.builtin.systemd_service:
+    name: "{{ host_hardening_sshd_service_name }}"
+    state: reloaded
+
+- name: Reload nftables service
+  ansible.builtin.systemd_service:
+    name: nftables.service
+    state: reloaded
+
+- name: Reload ufw service
+  when: host_hardening_firewall_enabled | bool
+  community.general.ufw:
+    state: reloaded
+
+- name: Reload firewalld service
+  when: host_hardening_firewall_enabled | bool
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: reloaded
+
+- name: Reboot after kernel module changes
+  ansible.builtin.reboot:
+  when: host_hardening_kernel_modules_reboot_on_change | bool

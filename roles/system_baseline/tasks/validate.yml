@@ -1,0 +1,58 @@
+---
+- name: Validate mail relay variables
+  ansible.builtin.assert:
+    that:
+      - system_baseline_mta_notification_email is string
+      - system_baseline_mta_notification_email | trim | length > 0
+      - system_baseline_mta_smtp_relayhost is string
+      - system_baseline_mta_smtp_relayhost | trim | length > 0
+      - system_baseline_mta_smtp_relay_port is not none
+      - system_baseline_mta_sender_domain is string
+      - system_baseline_mta_sender_domain | trim | length > 0
+    quiet: true
+    fail_msg: >-
+      Notification email, SMTP relay host, relay port, and sender domain must
+      be configured when system_baseline_mta_enabled is true.
+  when: system_baseline_mta_enabled | bool
+
+- name: Validate SMTP relay port
+  ansible.builtin.assert:
+    that:
+      - system_baseline_mta_smtp_relay_port | int >= 1
+      - system_baseline_mta_smtp_relay_port | int <= 65535
+    quiet: true
+    fail_msg: >-
+      system_baseline_mta_smtp_relay_port must be between 1 and 65535.
+  when:
+    - system_baseline_mta_enabled | bool
+    - system_baseline_mta_smtp_relay_port is not none
+
+- name: Validate root CA filenames
+  ansible.builtin.assert:
+    that:
+      - item.filename | trim | length > 0
+      - item.filename == (item.filename | basename)
+      - item.filename is match('^[A-Za-z0-9._-]+\.crt$')
+    quiet: true
+    fail_msg: >-
+      Root CA filename "{{ item.filename }}" must be a plain filename ending
+      in .crt and must not contain a directory path.
+  loop: "{{ system_baseline_root_ca_list }}"
+  loop_control:
+    label: "{{ item.filename }}"
+
+- name: Validate root CA certificate content
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.content is defined
+        and item.content is string
+        and item.content | trim | length > 0
+    quiet: true
+    fail_msg: >-
+      Root CA "{{ item.filename }}" must provide non-empty certificate content
+      when its state is present.
+  loop: "{{ system_baseline_root_ca_list }}"
+  loop_control:
+    label: "{{ item.filename }}"
+  when: item.state == "present"

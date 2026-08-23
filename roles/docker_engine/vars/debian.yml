@@ -1,0 +1,14 @@
+---
+# vars file for docker_engine Debian OS
+
+docker_engine_apt_cache_valid_time: 3600 # 1 hour
+
+docker_engine_conflicting_package_list:
+  - docker.io
+  - docker-compose
+  - docker-compose-v2
+  - docker-doc
+  - docker-buildx
+  - podman-docker
+  - containerd
+  - runc

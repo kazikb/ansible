@@ -1,0 +1,14 @@
+---
+# vars file for docker_engine RedHat OS
+
+docker_engine_conflicting_package_list:
+  - docker
+  - docker-client
+  - docker-client-latest
+  - docker-common
+  - docker-latest
+  - docker-latest-logrotate
+  - docker-logrotate
+  - docker-engine
+  - podman
+  - runc
