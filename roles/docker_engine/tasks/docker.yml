@@ -7,7 +7,6 @@
       ansible.builtin.apt:
         name: "{{ docker_engine_conflicting_package_list }}"
         state: absent
-        purge: true
         update_cache: true
         cache_valid_time: "{{ docker_engine_apt_cache_valid_time }}"
 
@@ -27,6 +26,7 @@
         architectures: "{{ docker_engine_dpkg_architecture.stdout }}"
         signed_by: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg"
         enabled: true
+        install_python_debian: true
       register: docker_engine_apt_repository_state
 
     - name: Force update APT cache after adding Docker Engine repository
@@ -48,7 +48,12 @@
       ansible.builtin.dnf:
         name: "{{ docker_engine_conflicting_package_list }}"
         state: absent
-        autoremove: true
+
+    - name: Install prerequisite packages on RedHat systems
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+        update_cache: true
 
     - name: Add Docker Engine repository on RedHat systems
       ansible.builtin.command:
