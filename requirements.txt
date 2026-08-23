@@ -1,0 +1,2 @@
+ansible-core>=2.21.0
+netaddr>=0.10.1

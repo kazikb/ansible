@@ -1,6 +1,0 @@
----
-- name: Tests system_baseline
-  hosts: localhost
-  remote_user: root
-  roles:
-    - system_baseline

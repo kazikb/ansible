@@ -1,6 +1,0 @@
----
-- name: Tests docker_engine
-  hosts: localhost
-  remote_user: root
-  roles:
-    - docker_engine

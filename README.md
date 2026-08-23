@@ -1,11 +1,48 @@
-# ansible
+# Ansible
 
-This repository contains my Ansible playbooks and roles that i wrote to better known this awesome tool.
+This repository contains Ansible roles and playbooks for configuring supported
+Debian, Ubuntu and Enterprise Linux hosts. Each role documents its requirements,
+variables and usage separately.
 
-Roles have separated README file with description what this role configures, lists of variables and example playbooks.
+The roles and playbooks are developed for my personal lab environment and are
+provided "as is". Review and test them on disposable hosts before using them
+in your own environment.
 
-Playbooks have detailed comments at the beginning of the file witch explained what is its purpose.
+Roles
+-----
 
-In my lab environment i use Debian/Ubuntu/CentOS/Rocky Linux and most of the code in this repo should run on those distribution. In case of roles i put info about suported platforms in theire meta file.
+| Role | Description |
+| --- | --- |
+| [`access_management`](roles/access_management/README.md) | Manages local users, groups, SSH access, sudo rules and the root account. |
+| [`docker_engine`](roles/docker_engine/README.md) | Installs and configures Docker Engine. |
+| [`host_hardening`](roles/host_hardening/README.md) | Manages OpenSSH hardening, the host firewall, sysctl parameters and kernel modules. |
+| [`system_baseline`](roles/system_baseline/README.md) | Configures a common operating system baseline. |
 
-If suport for Debian OS family is not needed in a playbook then i defently recommend to check awesome [Linux System Roles](https://linux-system-roles.github.io/) if component that need to be configured isnt alredy included there.
+Normal Operation
+----------------
+
+Create and activate a Python virtual environment, then install the runtime
+requirements and Ansible Galaxy collections:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+ansible-galaxy collection install -r requirements.yml
+```
+
+Keep inventories and host variables outside the tracked repository, preferably
+under `local/`, and pass the inventory explicitly with `-i`.
+
+Development
+-----------
+
+Create and activate a Python virtual environment, then install the development
+requirements and Ansible Galaxy collections:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements-dev.txt
+ansible-galaxy collection install -r requirements.yml
+```
