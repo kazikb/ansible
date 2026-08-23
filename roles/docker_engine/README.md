@@ -108,7 +108,7 @@ ansible-playbook site.yml --tags docker_engine
 License
 -------
 
-MIT / BSD
+MIT
 
 Author Information
 ------------------
