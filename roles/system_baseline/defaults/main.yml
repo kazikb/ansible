@@ -40,7 +40,7 @@ system_baseline_mta_notification_email: ""
 # SMTP relay host
 system_baseline_mta_smtp_relayhost: ""
 # SMTP relay port
-system_baseline_mta_smtp_relay_port: ""
+system_baseline_mta_smtp_relay_port: null
 # Domain used for rewritten sender addresses
 system_baseline_mta_sender_domain:
 # none: no TLS
